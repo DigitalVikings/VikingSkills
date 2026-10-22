@@ -2,14 +2,12 @@
 
 **VikingSkills** transforms Valheim's skills interface into a full-screen, panoramic Nordic **Rune Sanctuary HUD** featuring individual skill progression pillars, sub-level XP tracking, and milestone-socketed **Keystone Skill Trees** powered by VikingLib.
 
-![Rune Sanctuary Skill Overview](skill_overview_hud.png)
-![Woodcutting Skill Tree](woodcutting_skill_ui.png)
+![Rune Sanctuary Skill Overview](https://raw.githubusercontent.com/DigitalVikings/VikingSkills/main/skill_overview_hud.png)
+![Woodcutting Skill Tree](https://raw.githubusercontent.com/DigitalVikings/VikingSkills/main/woodcutting_skill_ui.png)
 
-> [!WARNING]
-> **Work in Progress (Pre-Release v0.1.0)**: This mod is in active development and has not been tested extensively. Features, balance, and mechanics may change, and unintended bugs or edge cases may occur. Backup your character and world saves before testing.
+> ⚠️ **Work in Progress (Pre-Release v0.1.0)**: This mod is in active development and has not been tested extensively. Features, balance, and mechanics may change, and unintended bugs or edge cases may occur. Backup your character and world saves before testing.
 
-> [!IMPORTANT]
-> **Powered by VikingLib**: This mod requires [VikingLib](https://valheim.thunderstore.io/package/DigitalVikings/VikingLib/). 
+> ⚡ **Powered by VikingLib**: This mod requires [VikingLib](https://valheim.thunderstore.io/package/DigitalVikings/VikingLib/). 
 > VikingLib replaces Valheim's native combat calculation and stat engines. Not all mods may be compatible / work as expected with this.
 
 ---
