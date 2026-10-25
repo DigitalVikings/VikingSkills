@@ -12,7 +12,7 @@ namespace VikingSkills
     {
         public const string ModGuid = "com.digitalvikings.vikingskills";
         public const string ModName = "VikingSkills";
-        public const string ModVersion = "0.1.0";
+        public const string ModVersion = "0.1.1";
 
         internal static ManualLogSource Log = null!;
         private Harmony _harmony = null!;

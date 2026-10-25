@@ -1,6 +1,6 @@
 {
   "name": "VikingSkills",
-  "version_number": "0.1.0",
+  "version_number": "0.1.1",
   "website_url": "https://github.com/DigitalVikings/VikingSkills",
   "description": "Full-screen panoramic Skill Tree HUD overhauling the skills interface with dedicated pillars, milestone keystones, and VikingLib integration.",
   "dependencies": [
