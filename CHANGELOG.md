@@ -2,6 +2,11 @@
 
 All notable changes to **VikingSkills** will be documented in this file.
 
+## [0.1.2] - 2026-10-29
+
+### Changed
+- **Panoramic UI Architecture**: Refactored the skill tree drawer and dialog views with fluent UI builder helpers, optimizing layout hierarchy and rendering overhead.
+
 ## [0.1.1] - 2026-10-25
 
 ### Changed

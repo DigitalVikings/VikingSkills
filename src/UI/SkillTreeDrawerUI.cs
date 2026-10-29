@@ -80,255 +80,106 @@ namespace VikingSkills.UI
             backdrop.color = new Color(0.04f, 0.03f, 0.02f, 0.88f);
 
             // 2. Centered Modal Window
-            _modalWindow = new GameObject("ModalWindow", typeof(RectTransform));
-            _modalWindow.transform.SetParent(transform, false);
+            _modalWindow = transform.CreateChild("ModalWindow", typeof(RectTransform));
             var modalRect = _modalWindow.GetComponent<RectTransform>();
-            modalRect.anchorMin = new Vector2(0.5f, 0.5f);
-            modalRect.anchorMax = new Vector2(0.5f, 0.5f);
-            modalRect.pivot = new Vector2(0.5f, 0.5f);
-            modalRect.anchoredPosition = Vector2.zero;
-            modalRect.sizeDelta = new Vector2(1280f, 620f);
+            modalRect.SetAnchors(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1280f, 620f));
 
             // Modal Soft Drop Shadow
-            var shadowObj = new GameObject("ModalShadow", typeof(RectTransform), typeof(Image));
-            shadowObj.transform.SetParent(_modalWindow.transform, false);
-            var shadowRect = shadowObj.GetComponent<RectTransform>();
-            shadowRect.anchorMin = Vector2.zero;
-            shadowRect.anchorMax = Vector2.one;
-            shadowRect.offsetMin = new Vector2(-16f, -16f);
-            shadowRect.offsetMax = new Vector2(16f, 16f);
-            var shadowImg = shadowObj.GetComponent<Image>();
-            shadowImg.sprite = UIHelper.GetSoftShadow();
-            shadowImg.type = Image.Type.Sliced;
-            shadowImg.color = new Color(0f, 0f, 0f, 0.75f);
+            var shadowImg = _modalWindow.transform.AddImage("ModalShadow", UIHelper.GetSoftShadow(), new Color(0f, 0f, 0f, 0.75f), Image.Type.Sliced);
+            shadowImg.rectTransform.Fill(left: -16f, bottom: -16f, right: -16f, top: -16f);
 
             // Modal Glass Body
-            var modalBgObj = new GameObject("ModalGlass", typeof(RectTransform), typeof(Image));
-            modalBgObj.transform.SetParent(_modalWindow.transform, false);
-            var mbRect = modalBgObj.GetComponent<RectTransform>();
-            mbRect.anchorMin = Vector2.zero;
-            mbRect.anchorMax = Vector2.one;
-            mbRect.offsetMin = Vector2.zero;
-            mbRect.offsetMax = Vector2.zero;
-            var mbImg = modalBgObj.GetComponent<Image>();
-            mbImg.sprite = UIHelper.GetGlassPanel();
-            mbImg.type = Image.Type.Sliced;
-            mbImg.color = new Color(1f, 1f, 1f, 1f);
+            var modalBg = _modalWindow.transform.AddImage("ModalGlass", UIHelper.GetGlassPanel(), Color.white, Image.Type.Sliced);
+            modalBg.rectTransform.Fill();
 
             // 3. Top Header Bar (56px) - Plain title, no "Skill Tree"
-            BuildHeader(modalBgObj.transform, font);
+            BuildHeader(modalBg.transform, font);
 
             // 4. Left Pinned Cumulative Overview Panel (280px)
-            BuildLeftOverviewPanel(modalBgObj.transform, font);
+            BuildLeftOverviewPanel(modalBg.transform, font);
 
             // 5. Right Timeline Viewport (Levels 1 to 100)
-            BuildTimelineViewport(modalBgObj.transform, font);
+            BuildTimelineViewport(modalBg.transform, font);
 
             // 6. Floating Selection Shelf (Hidden by default)
-            BuildSelectionShelf(modalBgObj.transform, font);
+            BuildSelectionShelf(modalBg.transform, font);
 
             // 7. Hover Tooltip (Hidden by default)
-            BuildHoverTooltip(modalBgObj.transform, font);
+            BuildHoverTooltip(modalBg.transform, font);
         }
 
         private void BuildHeader(Transform parent, TMP_FontAsset? font)
         {
-            var topBarObj = new GameObject("HeaderBar", typeof(RectTransform), typeof(Image));
-            topBarObj.transform.SetParent(parent, false);
-            var topBarRect = topBarObj.GetComponent<RectTransform>();
-            topBarRect.anchorMin = new Vector2(0f, 1f);
-            topBarRect.anchorMax = new Vector2(1f, 1f);
-            topBarRect.pivot = new Vector2(0.5f, 1f);
-            topBarRect.anchoredPosition = Vector2.zero;
-            topBarRect.sizeDelta = new Vector2(0f, 56f);
-            var topBarImg = topBarObj.GetComponent<Image>();
-            topBarImg.sprite = UIHelper.GetGlassCard();
-            topBarImg.type = Image.Type.Sliced;
-            topBarImg.color = new Color(0.12f, 0.09f, 0.07f, 0.98f);
+            var topBar = parent.AddImage("HeaderBar", UIHelper.GetGlassCard(), new Color(0.12f, 0.09f, 0.07f, 0.98f), Image.Type.Sliced);
+            topBar.rectTransform.SetAnchors(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 56f));
 
             // Icon Crest (Top-Left)
-            var iconBackdrop = new GameObject("IconBackdrop", typeof(RectTransform), typeof(Image));
-            iconBackdrop.transform.SetParent(topBarObj.transform, false);
-            var ibRect = iconBackdrop.GetComponent<RectTransform>();
-            ibRect.anchorMin = new Vector2(0f, 0.5f);
-            ibRect.anchorMax = new Vector2(0f, 0.5f);
-            ibRect.pivot = new Vector2(0f, 0.5f);
-            ibRect.anchoredPosition = new Vector2(20f, 0f);
-            ibRect.sizeDelta = new Vector2(50f, 50f);
-            var ibImg = iconBackdrop.GetComponent<Image>();
-            ibImg.sprite = UIHelper.GetNodeCircle();
-            ibImg.color = new Color(0.16f, 0.12f, 0.09f, 0.95f);
+            var iconBackdrop = topBar.transform.AddImage("IconBackdrop", UIHelper.GetNodeCircle(), new Color(0.16f, 0.12f, 0.09f, 0.95f));
+            iconBackdrop.rectTransform.SetAnchors(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(50f, 50f));
 
-            var iconObj = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-            iconObj.transform.SetParent(iconBackdrop.transform, false);
-            var iconRect = iconObj.GetComponent<RectTransform>();
-            iconRect.anchorMin = new Vector2(0.5f, 0.5f);
-            iconRect.anchorMax = new Vector2(0.5f, 0.5f);
-            iconRect.pivot = new Vector2(0.5f, 0.5f);
-            iconRect.sizeDelta = new Vector2(38f, 38f);
-            _skillIcon = iconObj.GetComponent<Image>();
+            _skillIcon = iconBackdrop.transform.AddImage("Icon", null, Color.white);
+            _skillIcon.rectTransform.SetAnchors(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(38f, 38f));
             _skillIcon.preserveAspect = true;
 
             // Title (Plain title, e.g. "CLUBS", "SWORDS" - NO "Skill Tree")
-            var titleObj = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-            titleObj.transform.SetParent(topBarObj.transform, false);
-            var titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0f, 0.5f);
-            titleRect.anchorMax = new Vector2(0f, 0.5f);
-            titleRect.pivot = new Vector2(0f, 0.5f);
-            titleRect.anchoredPosition = new Vector2(80f, 0f);
-            titleRect.sizeDelta = new Vector2(400f, 28f);
-            _headerTitle = titleObj.GetComponent<TextMeshProUGUI>();
-            if (font != null) _headerTitle.font = font;
-            _headerTitle.fontSize = 17f;
-            _headerTitle.alignment = TextAlignmentOptions.MidlineLeft;
-            _headerTitle.color = UIHelper.LightText;
+            _headerTitle = topBar.transform.AddText("Title", "", font, 17f, UIHelper.LightText, TextAlignmentOptions.MidlineLeft);
+            _headerTitle.rectTransform.SetAnchors(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(80f, 0f), new Vector2(400f, 28f));
 
             // Return Button (Standardized shared UI element on top-right)
-            UIHelper.CreateReturnButton(topBarObj.transform, new Vector2(-20f, 0f), new Vector2(146f, 44f),
+            UIHelper.CreateReturnButton(topBar.transform, new Vector2(-20f, 0f), new Vector2(146f, 44f),
                 new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                 "RETURN", Close, font);
         }
 
         private void BuildLeftOverviewPanel(Transform parent, TMP_FontAsset? font)
         {
-            var leftPanelObj = new GameObject("LeftOverviewPanel", typeof(RectTransform), typeof(Image));
-            leftPanelObj.transform.SetParent(parent, false);
-            var lpRect = leftPanelObj.GetComponent<RectTransform>();
-            lpRect.anchorMin = new Vector2(0f, 0f);
-            lpRect.anchorMax = new Vector2(0f, 1f);
-            lpRect.pivot = new Vector2(0f, 0.5f);
-            lpRect.anchoredPosition = new Vector2(14f, -28f);
-            lpRect.sizeDelta = new Vector2(340f, -70f);
-
-            var lpImg = leftPanelObj.GetComponent<Image>();
-            lpImg.sprite = UIHelper.GetGlassCard();
-            lpImg.type = Image.Type.Sliced;
-            lpImg.color = new Color(0.09f, 0.07f, 0.05f, 0.96f);
+            var leftPanel = parent.AddImage("LeftOverviewPanel", UIHelper.GetGlassCard(), new Color(0.09f, 0.07f, 0.05f, 0.96f), Image.Type.Sliced);
+            leftPanel.rectTransform.SetAnchors(new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(14f, -28f), new Vector2(340f, -70f));
 
             // 1. Level Display
-            var levelObj = new GameObject("LevelText", typeof(RectTransform), typeof(TextMeshProUGUI));
-            levelObj.transform.SetParent(leftPanelObj.transform, false);
-            var levelRect = levelObj.GetComponent<RectTransform>();
-            levelRect.anchorMin = new Vector2(0.5f, 1f);
-            levelRect.anchorMax = new Vector2(0.5f, 1f);
-            levelRect.pivot = new Vector2(0.5f, 1f);
-            levelRect.anchoredPosition = new Vector2(0f, -14f);
-            levelRect.sizeDelta = new Vector2(300f, 32f);
-            _leftLevelText = levelObj.GetComponent<TextMeshProUGUI>();
-            if (font != null) _leftLevelText.font = font;
-            _leftLevelText.fontSize = 20f;
-            _leftLevelText.alignment = TextAlignmentOptions.Center;
+            _leftLevelText = leftPanel.transform.AddText("LevelText", "", font, 20f, Color.white, TextAlignmentOptions.Center);
+            _leftLevelText.rectTransform.SetAnchors(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -14f), new Vector2(300f, 32f));
 
-            // 2. XP Progress Track (No "XP to next level" text)
-            var xpTrackObj = new GameObject("XpTrack", typeof(RectTransform), typeof(Image));
-            xpTrackObj.transform.SetParent(leftPanelObj.transform, false);
-            var xpTrackRect = xpTrackObj.GetComponent<RectTransform>();
-            xpTrackRect.anchorMin = new Vector2(0.5f, 1f);
-            xpTrackRect.anchorMax = new Vector2(0.5f, 1f);
-            xpTrackRect.pivot = new Vector2(0.5f, 1f);
-            xpTrackRect.anchoredPosition = new Vector2(0f, -50f);
-            xpTrackRect.sizeDelta = new Vector2(300f, 6f);
-            var xpTrackImg = xpTrackObj.GetComponent<Image>();
-            xpTrackImg.sprite = UIHelper.GetConduitTrack();
-            xpTrackImg.type = Image.Type.Sliced;
-            xpTrackImg.color = new Color(0.08f, 0.06f, 0.05f, 0.95f);
+            // 2. XP Progress Track
+            var xpTrack = leftPanel.transform.AddImage("XpTrack", UIHelper.GetConduitTrack(), new Color(0.08f, 0.06f, 0.05f, 0.95f), Image.Type.Sliced);
+            xpTrack.rectTransform.SetAnchors(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -50f), new Vector2(300f, 6f));
 
-            var xpFillObj = new GameObject("XpFill", typeof(RectTransform), typeof(Image));
-            xpFillObj.transform.SetParent(xpTrackObj.transform, false);
-            var xpFillRect = xpFillObj.GetComponent<RectTransform>();
-            xpFillRect.anchorMin = Vector2.zero;
-            xpFillRect.anchorMax = Vector2.one;
-            xpFillRect.offsetMin = Vector2.zero;
-            xpFillRect.offsetMax = Vector2.zero;
-            _leftXpFill = xpFillObj.GetComponent<Image>();
-            _leftXpFill.sprite = UIHelper.GetWhiteSprite();
-            _leftXpFill.type = Image.Type.Filled;
+            _leftXpFill = xpTrack.transform.AddImage("XpFill", UIHelper.GetWhiteSprite(), UIHelper.BrightBlueConduit, Image.Type.Filled);
+            _leftXpFill.rectTransform.Fill();
             _leftXpFill.fillMethod = Image.FillMethod.Horizontal;
             _leftXpFill.fillOrigin = (int)Image.OriginHorizontal.Left;
-            _leftXpFill.color = UIHelper.BrightBlueConduit;
 
             // 3. Divider
-            CreateHorizontalLine(leftPanelObj.transform, -68f);
+            CreateHorizontalLine(leftPanel.transform, -68f);
 
             // 4. "CUMULATIVE PASSIVES" Title & Content
-            var passTitleObj = new GameObject("PassivesTitle", typeof(RectTransform), typeof(TextMeshProUGUI));
-            passTitleObj.transform.SetParent(leftPanelObj.transform, false);
-            var ptRect = passTitleObj.GetComponent<RectTransform>();
-            ptRect.anchorMin = new Vector2(0f, 1f);
-            ptRect.anchorMax = new Vector2(1f, 1f);
-            ptRect.pivot = new Vector2(0.5f, 1f);
-            ptRect.anchoredPosition = new Vector2(0f, -76f);
-            ptRect.sizeDelta = new Vector2(-28f, 16f);
-            var ptTmp = passTitleObj.GetComponent<TextMeshProUGUI>();
-            if (font != null) ptTmp.font = font;
-            ptTmp.text = "<color=#E5A93C><b>CUMULATIVE PASSIVES</b></color>";
-            ptTmp.fontSize = 11f;
-            ptTmp.alignment = TextAlignmentOptions.Center;
+            var ptTmp = leftPanel.transform.AddText("PassivesTitle", "<color=#E5A93C><b>CUMULATIVE PASSIVES</b></color>", font, 11f, Color.white, TextAlignmentOptions.Center);
+            ptTmp.rectTransform.SetAnchors(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -76f), new Vector2(-28f, 16f));
 
-            // Passives Two-Column Container (Left aligned labels, Right aligned values)
-            var passContainer = new GameObject("PassivesContainer", typeof(RectTransform));
-            passContainer.transform.SetParent(leftPanelObj.transform, false);
+            // Passives Two-Column Container
+            var passContainer = leftPanel.transform.CreateChild("PassivesContainer", typeof(RectTransform));
             var pcRect = passContainer.GetComponent<RectTransform>();
-            pcRect.anchorMin = new Vector2(0f, 1f);
-            pcRect.anchorMax = new Vector2(1f, 1f);
-            pcRect.pivot = new Vector2(0.5f, 1f);
-            pcRect.anchoredPosition = new Vector2(0f, -96f);
-            pcRect.sizeDelta = new Vector2(-28f, 160f);
+            pcRect.SetAnchors(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -96f), new Vector2(-28f, 160f));
 
-            var passLabelsObj = new GameObject("PassivesLabels", typeof(RectTransform), typeof(TextMeshProUGUI));
-            passLabelsObj.transform.SetParent(passContainer.transform, false);
-            var plRect = passLabelsObj.GetComponent<RectTransform>();
-            plRect.anchorMin = Vector2.zero;
-            plRect.anchorMax = Vector2.one;
-            plRect.offsetMin = Vector2.zero;
-            plRect.offsetMax = new Vector2(-65f, 0f);
-            _leftPassivesLabels = passLabelsObj.GetComponent<TextMeshProUGUI>();
-            if (font != null) _leftPassivesLabels.font = font;
-            _leftPassivesLabels.fontSize = 10.5f;
+            _leftPassivesLabels = passContainer.transform.AddText("PassivesLabels", "", font, 10.5f, Color.white, TextAlignmentOptions.TopLeft);
+            _leftPassivesLabels.rectTransform.Fill(right: 65f);
             _leftPassivesLabels.lineSpacing = 1.15f;
-            _leftPassivesLabels.alignment = TextAlignmentOptions.TopLeft;
 
-            var passValsObj = new GameObject("PassivesValues", typeof(RectTransform), typeof(TextMeshProUGUI));
-            passValsObj.transform.SetParent(passContainer.transform, false);
-            var pvRect = passValsObj.GetComponent<RectTransform>();
-            pvRect.anchorMin = Vector2.zero;
-            pvRect.anchorMax = Vector2.one;
-            pvRect.offsetMin = new Vector2(170f, 0f);
-            pvRect.offsetMax = Vector2.zero;
-            _leftPassivesValues = passValsObj.GetComponent<TextMeshProUGUI>();
-            if (font != null) _leftPassivesValues.font = font;
-            _leftPassivesValues.fontSize = 10.5f;
+            _leftPassivesValues = passContainer.transform.AddText("PassivesValues", "", font, 10.5f, Color.white, TextAlignmentOptions.TopRight);
+            _leftPassivesValues.rectTransform.Fill(left: 170f);
             _leftPassivesValues.lineSpacing = 1.15f;
-            _leftPassivesValues.alignment = TextAlignmentOptions.TopRight;
 
             // 5. Divider
-            CreateHorizontalLine(leftPanelObj.transform, -270f);
+            CreateHorizontalLine(leftPanel.transform, -270f);
 
             // 6. "KEYSTONES" Section Header
-            var sockTitleObj = new GameObject("SocketTitle", typeof(RectTransform), typeof(TextMeshProUGUI));
-            sockTitleObj.transform.SetParent(leftPanelObj.transform, false);
-            var stRect = sockTitleObj.GetComponent<RectTransform>();
-            stRect.anchorMin = new Vector2(0f, 1f);
-            stRect.anchorMax = new Vector2(1f, 1f);
-            stRect.pivot = new Vector2(0.5f, 1f);
-            stRect.anchoredPosition = new Vector2(0f, -280f);
-            stRect.sizeDelta = new Vector2(-28f, 16f);
-            var stTmp = sockTitleObj.GetComponent<TextMeshProUGUI>();
-            if (font != null) stTmp.font = font;
-            stTmp.text = "<color=#E5A93C><b>KEYSTONE SOCKETS</b></color>";
-            stTmp.fontSize = 11f;
-            stTmp.alignment = TextAlignmentOptions.Center;
+            var stTmp = leftPanel.transform.AddText("SocketTitle", "<color=#E5A93C><b>KEYSTONE SOCKETS</b></color>", font, 11f, Color.white, TextAlignmentOptions.Center);
+            stTmp.rectTransform.SetAnchors(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -280f), new Vector2(-28f, 16f));
 
-            // 7. Horizontal Row of 5 Circular Keystone Socket Icons (Hover for details)
-            var sockRowObj = new GameObject("SocketRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-            sockRowObj.transform.SetParent(leftPanelObj.transform, false);
+            // 7. Horizontal Row of 5 Circular Keystone Socket Icons
+            var sockRowObj = leftPanel.transform.CreateChild("SocketRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             var scRect = sockRowObj.GetComponent<RectTransform>();
-            scRect.anchorMin = new Vector2(0.5f, 0f);
-            scRect.anchorMax = new Vector2(0.5f, 0f);
-            scRect.pivot = new Vector2(0.5f, 0f);
-            scRect.anchoredPosition = new Vector2(0f, 14f);
-            scRect.sizeDelta = new Vector2(320f, 66f);
+            scRect.SetAnchors(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(320f, 66f));
             var hlg = sockRowObj.GetComponent<HorizontalLayoutGroup>();
             hlg.spacing = 6f;
             hlg.childAlignment = TextAnchor.MiddleCenter;
@@ -339,27 +190,16 @@ namespace VikingSkills.UI
 
         private void CreateHorizontalLine(Transform parent, float yOffset)
         {
-            var lineObj = new GameObject("Line", typeof(RectTransform), typeof(Image));
-            lineObj.transform.SetParent(parent, false);
-            var lRect = lineObj.GetComponent<RectTransform>();
-            lRect.anchorMin = new Vector2(0f, 1f);
-            lRect.anchorMax = new Vector2(1f, 1f);
-            lRect.pivot = new Vector2(0.5f, 1f);
-            lRect.anchoredPosition = new Vector2(0f, yOffset);
-            lRect.sizeDelta = new Vector2(-24f, 1.5f);
-            var lImg = lineObj.GetComponent<Image>();
-            lImg.sprite = UIHelper.GetWhiteSprite();
-            lImg.color = new Color(0.40f, 0.30f, 0.20f, 0.50f);
+            var line = parent.AddImage("Line", UIHelper.GetWhiteSprite(), new Color(0.40f, 0.30f, 0.20f, 0.50f));
+            line.rectTransform.SetAnchors(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, yOffset), new Vector2(-24f, 1.5f));
         }
 
         private void BuildTimelineViewport(Transform parent, TMP_FontAsset? font)
         {
             // Viewport bounds
-            var scrollObj = new GameObject("TimelineScroll", typeof(RectTransform), typeof(ScrollRect));
-            scrollObj.transform.SetParent(parent, false);
+            var scrollObj = parent.CreateChild("TimelineScroll", typeof(RectTransform), typeof(ScrollRect));
             var scrollRect = scrollObj.GetComponent<RectTransform>();
-            scrollRect.anchorMin = Vector2.zero;
-            scrollRect.anchorMax = Vector2.one;
+            scrollRect.SetAnchors(Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             scrollRect.offsetMin = new Vector2(368f, 52f);
             scrollRect.offsetMax = new Vector2(-16f, -64f);
 
@@ -370,24 +210,15 @@ namespace VikingSkills.UI
             _timelineScrollRect.scrollSensitivity = 40f;
 
             // Viewport Mask
-            var vpObj = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
-            vpObj.transform.SetParent(scrollObj.transform, false);
+            var vpObj = scrollObj.transform.CreateChild("Viewport", typeof(RectTransform), typeof(RectMask2D));
             var vpRect = vpObj.GetComponent<RectTransform>();
-            vpRect.anchorMin = Vector2.zero;
-            vpRect.anchorMax = Vector2.one;
-            vpRect.offsetMin = Vector2.zero;
-            vpRect.offsetMax = Vector2.zero;
+            vpRect.Fill();
             _timelineScrollRect.viewport = vpRect;
 
             // Content Track
-            var contentObj = new GameObject("Content", typeof(RectTransform));
-            contentObj.transform.SetParent(vpObj.transform, false);
+            var contentObj = vpObj.transform.CreateChild("Content", typeof(RectTransform));
             _timelineContent = contentObj.GetComponent<RectTransform>();
-            _timelineContent.anchorMin = new Vector2(0f, 0.5f);
-            _timelineContent.anchorMax = new Vector2(0f, 0.5f);
-            _timelineContent.pivot = new Vector2(0f, 0.5f);
-            _timelineContent.anchoredPosition = Vector2.zero;
-            _timelineContent.sizeDelta = new Vector2(TimelineWidth, 460f);
+            _timelineContent.SetAnchors(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(TimelineWidth, 460f));
             _timelineScrollRect.content = _timelineContent;
 
             // Draggable Timeline Slider at bottom
@@ -396,55 +227,22 @@ namespace VikingSkills.UI
 
         private void BuildTimelineSlider(Transform parent, TMP_FontAsset? font)
         {
-            var sliderRootObj = new GameObject("TimelineSliderRoot", typeof(RectTransform));
-            sliderRootObj.transform.SetParent(parent, false);
+            var sliderRootObj = parent.CreateChild("TimelineSliderRoot", typeof(RectTransform));
             var rootRect = sliderRootObj.GetComponent<RectTransform>();
-            rootRect.anchorMin = new Vector2(0f, 0f);
-            rootRect.anchorMax = new Vector2(1f, 0f);
-            rootRect.pivot = new Vector2(0.5f, 0f);
-            rootRect.anchoredPosition = new Vector2(150f, 16f);
-            rootRect.sizeDelta = new Vector2(-400f, 22f);
+            rootRect.SetAnchors(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(150f, 16f), new Vector2(-400f, 22f));
 
             // Left Label: "Lv. 1"
-            var leftLbl = new GameObject("LeftLbl", typeof(RectTransform), typeof(TextMeshProUGUI));
-            leftLbl.transform.SetParent(sliderRootObj.transform, false);
-            var llRect = leftLbl.GetComponent<RectTransform>();
-            llRect.anchorMin = new Vector2(0f, 0.5f);
-            llRect.anchorMax = new Vector2(0f, 0.5f);
-            llRect.pivot = new Vector2(1f, 0.5f);
-            llRect.anchoredPosition = new Vector2(-12f, 0f);
-            llRect.sizeDelta = new Vector2(50f, 20f);
-            var llTmp = leftLbl.GetComponent<TextMeshProUGUI>();
-            if (font != null) llTmp.font = font;
-            llTmp.text = "<b>Lv. 1</b>";
-            llTmp.fontSize = 11f;
-            llTmp.alignment = TextAlignmentOptions.Right;
-            llTmp.color = UIHelper.MutedText;
+            var llTmp = sliderRootObj.transform.AddText("LeftLbl", "<b>Lv. 1</b>", font, 11f, UIHelper.MutedText, TextAlignmentOptions.Right);
+            llTmp.rectTransform.SetAnchors(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-12f, 0f), new Vector2(50f, 20f));
 
             // Right Label: "Lv. 100"
-            var rightLbl = new GameObject("RightLbl", typeof(RectTransform), typeof(TextMeshProUGUI));
-            rightLbl.transform.SetParent(sliderRootObj.transform, false);
-            var rlRect = rightLbl.GetComponent<RectTransform>();
-            rlRect.anchorMin = new Vector2(1f, 0.5f);
-            rlRect.anchorMax = new Vector2(1f, 0.5f);
-            rlRect.pivot = new Vector2(0f, 0.5f);
-            rlRect.anchoredPosition = new Vector2(12f, 0f);
-            rlRect.sizeDelta = new Vector2(60f, 20f);
-            var rlTmp = rightLbl.GetComponent<TextMeshProUGUI>();
-            if (font != null) rlTmp.font = font;
-            rlTmp.text = "<b>Lv. 100</b>";
-            rlTmp.fontSize = 11f;
-            rlTmp.alignment = TextAlignmentOptions.Left;
-            rlTmp.color = UIHelper.MutedText;
+            var rlTmp = sliderRootObj.transform.AddText("RightLbl", "<b>Lv. 100</b>", font, 11f, UIHelper.MutedText, TextAlignmentOptions.Left);
+            rlTmp.rectTransform.SetAnchors(new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), new Vector2(60f, 20f));
 
             // Slider Component
-            var sliderObj = new GameObject("Slider", typeof(RectTransform), typeof(Slider));
-            sliderObj.transform.SetParent(sliderRootObj.transform, false);
+            var sliderObj = sliderRootObj.transform.CreateChild("Slider", typeof(RectTransform), typeof(Slider));
             var sRect = sliderObj.GetComponent<RectTransform>();
-            sRect.anchorMin = Vector2.zero;
-            sRect.anchorMax = Vector2.one;
-            sRect.offsetMin = Vector2.zero;
-            sRect.offsetMax = Vector2.zero;
+            sRect.Fill();
 
             _timelineSlider = sliderObj.GetComponent<Slider>();
             _timelineSlider.direction = Slider.Direction.LeftToRight;
@@ -452,40 +250,20 @@ namespace VikingSkills.UI
             _timelineSlider.maxValue = 1f;
 
             // Background Track
-            var trackObj = new GameObject("Background", typeof(RectTransform), typeof(Image));
-            trackObj.transform.SetParent(sliderObj.transform, false);
-            var tRect = trackObj.GetComponent<RectTransform>();
-            tRect.anchorMin = new Vector2(0f, 0.5f);
-            tRect.anchorMax = new Vector2(1f, 0.5f);
-            tRect.pivot = new Vector2(0.5f, 0.5f);
-            tRect.anchoredPosition = Vector2.zero;
-            tRect.sizeDelta = new Vector2(0f, 6f);
-            var tImg = trackObj.GetComponent<Image>();
-            tImg.sprite = UIHelper.GetConduitTrack();
-            tImg.type = Image.Type.Sliced;
-            tImg.color = new Color(0.08f, 0.10f, 0.15f, 0.95f);
+            var tImg = sliderObj.transform.AddImage("Background", UIHelper.GetConduitTrack(), new Color(0.08f, 0.10f, 0.15f, 0.95f), Image.Type.Sliced);
+            tImg.rectTransform.SetAnchors(new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0f, 6f));
 
             // Handle Slide Area
-            var handleAreaObj = new GameObject("Handle Slide Area", typeof(RectTransform));
-            handleAreaObj.transform.SetParent(sliderObj.transform, false);
+            var handleAreaObj = sliderObj.transform.CreateChild("Handle Slide Area", typeof(RectTransform));
             var haRect = handleAreaObj.GetComponent<RectTransform>();
-            haRect.anchorMin = Vector2.zero;
-            haRect.anchorMax = Vector2.one;
-            haRect.offsetMin = new Vector2(24f, 0f);
-            haRect.offsetMax = new Vector2(-24f, 0f);
+            haRect.Fill(left: 24f, right: 24f);
 
             // Handle
-            var handleObj = new GameObject("Handle", typeof(RectTransform), typeof(Image));
-            handleObj.transform.SetParent(handleAreaObj.transform, false);
-            var hRect = handleObj.GetComponent<RectTransform>();
-            hRect.sizeDelta = new Vector2(48f, 18f);
-            var hImg = handleObj.GetComponent<Image>();
-            hImg.sprite = UIHelper.GetGlassCard();
-            hImg.type = Image.Type.Sliced;
-            hImg.color = new Color(0.22f, 0.32f, 0.50f, 0.98f);
+            var hImg = handleAreaObj.transform.AddImage("Handle", UIHelper.GetGlassCard(), new Color(0.22f, 0.32f, 0.50f, 0.98f), Image.Type.Sliced);
+            hImg.rectTransform.sizeDelta = new Vector2(48f, 18f);
 
             _timelineSlider.targetGraphic = hImg;
-            _timelineSlider.handleRect = hRect;
+            _timelineSlider.handleRect = hImg.rectTransform;
 
             _timelineSlider.onValueChanged.AddListener(val =>
             {
@@ -517,19 +295,9 @@ namespace VikingSkills.UI
 
         private void BuildSelectionShelf(Transform parent, TMP_FontAsset? font)
         {
-            _selectionShelf = new GameObject("SelectionShelf", typeof(RectTransform), typeof(Image));
-            _selectionShelf.transform.SetParent(parent, false);
-            var rect = _selectionShelf.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = new Vector2(140f, 0f);
-            rect.sizeDelta = new Vector2(820f, 500f);
-
-            var img = _selectionShelf.GetComponent<Image>();
-            img.sprite = UIHelper.GetGlassPanel();
-            img.type = Image.Type.Sliced;
-            img.color = new Color(0.11f, 0.08f, 0.06f, 0.98f);
+            var shelfImg = parent.AddImage("SelectionShelf", UIHelper.GetGlassPanel(), new Color(0.11f, 0.08f, 0.06f, 0.98f), Image.Type.Sliced);
+            _selectionShelf = shelfImg.gameObject;
+            shelfImg.rectTransform.SetAnchors(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(140f, 0f), new Vector2(820f, 500f));
 
             // Single Return Button in Top-Right Corner
             UIHelper.CreateReturnButton(_selectionShelf.transform, new Vector2(-16f, -14f), new Vector2(136f, 36f),
@@ -537,27 +305,13 @@ namespace VikingSkills.UI
                 "RETURN", () => _selectionShelf.SetActive(false), font);
 
             // Shelf Header (Centered, inset from edges)
-            var titleObj = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-            titleObj.transform.SetParent(_selectionShelf.transform, false);
-            var tRect = titleObj.GetComponent<RectTransform>();
-            tRect.anchorMin = new Vector2(0f, 1f);
-            tRect.anchorMax = new Vector2(1f, 1f);
-            tRect.pivot = new Vector2(0.5f, 1f);
-            tRect.anchoredPosition = new Vector2(0f, -16f);
-            tRect.sizeDelta = new Vector2(-320f, 32f);
-            _shelfTitle = titleObj.GetComponent<TextMeshProUGUI>();
-            if (font != null) _shelfTitle.font = font;
-            _shelfTitle.fontSize = 16f;
-            _shelfTitle.alignment = TextAlignmentOptions.Center;
+            _shelfTitle = _selectionShelf.transform.AddText("Title", "", font, 16f, Color.white, TextAlignmentOptions.Center);
+            _shelfTitle.rectTransform.SetAnchors(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(-320f, 32f));
 
             // Options Container (Horizontal Layout supporting 2, 3, or N choices)
-            var optionsObj = new GameObject("OptionsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-            optionsObj.transform.SetParent(_selectionShelf.transform, false);
+            var optionsObj = _selectionShelf.transform.CreateChild("OptionsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             var optRect = optionsObj.GetComponent<RectTransform>();
-            optRect.anchorMin = Vector2.zero;
-            optRect.anchorMax = Vector2.one;
-            optRect.offsetMin = new Vector2(24f, 24f);
-            optRect.offsetMax = new Vector2(-24f, -58f);
+            optRect.Fill(left: 24f, bottom: 24f, right: 24f, top: 58f);
             var hlg = optionsObj.GetComponent<HorizontalLayoutGroup>();
             hlg.spacing = 16f;
             hlg.childControlWidth = true;
@@ -571,8 +325,7 @@ namespace VikingSkills.UI
 
         private void BuildHoverTooltip(Transform parent, TMP_FontAsset? font)
         {
-            _hoverTooltip = new GameObject("HoverTooltip", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-            _hoverTooltip.transform.SetParent(parent, false);
+            _hoverTooltip = parent.CreateChild("HoverTooltip", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             var rect = _hoverTooltip.GetComponent<RectTransform>();
             rect.pivot = new Vector2(0.5f, 0f);
             rect.sizeDelta = new Vector2(480f, 0f);
@@ -594,20 +347,10 @@ namespace VikingSkills.UI
             csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var titleObj = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-            titleObj.transform.SetParent(_hoverTooltip.transform, false);
-            _tooltipTitle = titleObj.GetComponent<TextMeshProUGUI>();
-            if (font != null) _tooltipTitle.font = font;
-            _tooltipTitle.fontSize = 13f;
-            _tooltipTitle.alignment = TextAlignmentOptions.Center;
+            _tooltipTitle = _hoverTooltip.transform.AddText("Title", "", font, 13f, Color.white, TextAlignmentOptions.Center);
 
-            var contentObj = new GameObject("Content", typeof(RectTransform), typeof(TextMeshProUGUI));
-            contentObj.transform.SetParent(_hoverTooltip.transform, false);
-            _tooltipContent = contentObj.GetComponent<TextMeshProUGUI>();
-            if (font != null) _tooltipContent.font = font;
-            _tooltipContent.fontSize = 11f;
+            _tooltipContent = _hoverTooltip.transform.AddText("Content", "", font, 11f, Color.white, TextAlignmentOptions.Center);
             _tooltipContent.lineSpacing = 1.15f;
-            _tooltipContent.alignment = TextAlignmentOptions.Center;
 
             var cg = _hoverTooltip.AddComponent<CanvasGroup>();
             cg.blocksRaycasts = false;
