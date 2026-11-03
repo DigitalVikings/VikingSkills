@@ -14,6 +14,8 @@ namespace VikingSkills.UI
     {
         public static PanoramicSkillsDialog? Instance { get; private set; }
         public static bool IsOpen => Instance != null && Instance.gameObject.activeSelf;
+        private static int _lastClosedFrame = -1;
+        public static bool WasClosedThisFrame => _lastClosedFrame == Time.frameCount;
 
         private ScrollRect? _scrollRect;
         private RectTransform? _contentTransform;
@@ -89,6 +91,7 @@ namespace VikingSkills.UI
 
             if (Instance != null)
             {
+                Instance.transform.SetAsLastSibling();
                 Instance._cachedPlayer = player;
                 Instance.Populate(player);
                 Instance.gameObject.SetActive(true);
@@ -108,6 +111,7 @@ namespace VikingSkills.UI
                 }
 
                 Instance.gameObject.SetActive(false);
+                _lastClosedFrame = Time.frameCount;
                 UIHelper.PlaySfx("sfx_gui_button");
             }
         }

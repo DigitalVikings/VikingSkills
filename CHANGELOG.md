@@ -2,10 +2,23 @@
 
 All notable changes to **VikingSkills** will be documented in this file.
 
+## [0.1.3] - 2026-11-03
+
+### Added
+- **Death Skill Loss Configuration**: Added comprehensive settings to customize death skill loss behavior (None, Percentage, or FlatLevels).
+
+### Changed
+- **Default Skill Loss Tuning**: Synchronized default death skill loss mode to None for forgiving exploration.
+
 ## [0.1.2] - 2026-10-29
+
+### Added
+- **Project Auga Compatibility**: Integrated the panoramic skill interface with Auga's custom inventory tabs via soft dependency, restoring rich skill tree access.
 
 ### Changed
 - **Panoramic UI Architecture**: Refactored the skill tree drawer and dialog views with fluent UI builder helpers, optimizing layout hierarchy and rendering overhead.
+- **Event-Driven Skill Progression**: Subscribed progression logic directly to VikingLib's canonical SkillEvents channels, eliminating redundant native method patches.
+- **Localized Compendium Display**: Dynamically localizes skill names in Hugin's Compendium using native Valheim translation keys across all supported client languages.
 
 ## [0.1.1] - 2026-10-25
 

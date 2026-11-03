@@ -7,12 +7,14 @@ namespace VikingSkills
 {
     [BepInPlugin(ModGuid, ModName, ModVersion)]
     [BepInDependency("com.jotunn.jotunn", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Compat.AugaCompat.AugaGuid1, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Compat.AugaCompat.AugaGuid2, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(VikingLib.VikingLibPlugin.ModGuid, BepInDependency.DependencyFlags.HardDependency)]
     public class VikingSkillsPlugin : BaseUnityPlugin
     {
         public const string ModGuid = "com.digitalvikings.vikingskills";
         public const string ModName = "VikingSkills";
-        public const string ModVersion = "0.1.2";
+        public const string ModVersion = "0.1.3";
 
         internal static ManualLogSource Log = null!;
         private Harmony _harmony = null!;
@@ -40,9 +42,18 @@ namespace VikingSkills
             // Initialize KeystoneStatAdapter & status effects
             Services.KeystoneStatAdapter.Init();
 
+            // Initialize SkillProgressionManager for death penalties and progression curves
+            Services.SkillProgressionManager.Init();
+
             // Apply Harmony patches
             _harmony = new Harmony(ModGuid);
             _harmony.PatchAll();
+
+            // Initialize Auga compatibility if Auga is present
+            if (Compat.AugaCompat.IsAugaLoaded)
+            {
+                Compat.AugaCompat.Initialize(_harmony);
+            }
 
             Log.LogInfo($"{ModName} v{ModVersion} loaded successfully.");
 

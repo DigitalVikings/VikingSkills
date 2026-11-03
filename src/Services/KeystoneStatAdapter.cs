@@ -197,11 +197,22 @@ namespace VikingSkills.Services
 
         public static string GetSkillDisplayName(Skills.SkillType skill)
         {
+            string key = "$skill_" + skill.ToString().ToLowerInvariant();
+            if (Localization.instance != null)
+            {
+                string localized = Localization.instance.Localize(key);
+                if (!string.IsNullOrEmpty(localized) && !localized.StartsWith("$"))
+                {
+                    return localized;
+                }
+            }
+
             return skill switch
             {
                 Skills.SkillType.ElementalMagic => "Elemental Magic",
                 Skills.SkillType.BloodMagic => "Blood Magic",
                 Skills.SkillType.WoodCutting => "Woodcutting",
+                Skills.SkillType.Unarmed => "Fists",
                 _ => skill.ToString()
             };
         }
