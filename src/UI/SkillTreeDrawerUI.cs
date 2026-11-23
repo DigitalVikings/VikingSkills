@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using VikingSkills.Configuration;
 using VikingSkills.Data;
 using VikingSkills.Keystones;
 
@@ -13,11 +14,13 @@ namespace VikingSkills.UI
     public class SkillTreeDrawerUI : MonoBehaviour
     {
         public static SkillTreeDrawerUI? Instance { get; private set; }
+        public bool IsOpen => gameObject.activeSelf;
 
         private Skills.SkillType _currentSkill;
         private Player? _player;
         private GameObject? _modalWindow;
         private TMP_Text? _headerTitle;
+        private TMP_Text? _hearthStatusText;
         private Image? _skillIcon;
         private Sprite? _skillSprite;
         private Action? _onCloseCallback;
@@ -124,6 +127,10 @@ namespace VikingSkills.UI
             // Title (Plain title, e.g. "CLUBS", "SWORDS" - NO "Skill Tree")
             _headerTitle = topBar.transform.AddText("Title", "", font, 17f, UIHelper.LightText, TextAlignmentOptions.MidlineLeft);
             _headerTitle.rectTransform.SetAnchors(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(80f, 0f), new Vector2(400f, 28f));
+
+            // Hearthside Rested & Comfort Status Indicator (Right-aligned next to Return button)
+            _hearthStatusText = topBar.transform.AddText("HearthStatus", "", font, 12.5f, UIHelper.LightText, TextAlignmentOptions.MidlineRight);
+            _hearthStatusText.rectTransform.SetAnchors(new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-182f, 0f), new Vector2(540f, 30f));
 
             // Return Button (Standardized shared UI element on top-right)
             UIHelper.CreateReturnButton(topBar.transform, new Vector2(-20f, 0f), new Vector2(146f, 44f),
@@ -306,12 +313,12 @@ namespace VikingSkills.UI
 
             // Shelf Header (Centered, inset from edges)
             _shelfTitle = _selectionShelf.transform.AddText("Title", "", font, 16f, Color.white, TextAlignmentOptions.Center);
-            _shelfTitle.rectTransform.SetAnchors(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(-320f, 32f));
+            _shelfTitle.rectTransform.SetAnchors(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(-320f, 48f));
 
             // Options Container (Horizontal Layout supporting 2, 3, or N choices)
             var optionsObj = _selectionShelf.transform.CreateChild("OptionsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             var optRect = optionsObj.GetComponent<RectTransform>();
-            optRect.Fill(left: 24f, bottom: 24f, right: 24f, top: 58f);
+            optRect.Fill(left: 24f, bottom: 24f, right: 24f, top: 68f);
             var hlg = optionsObj.GetComponent<HorizontalLayoutGroup>();
             hlg.spacing = 16f;
             hlg.childControlWidth = true;
@@ -407,21 +414,48 @@ namespace VikingSkills.UI
             _tooltipTitle.alignment = TextAlignmentOptions.Center;
             _tooltipContent.alignment = TextAlignmentOptions.Center; // Always center keystone descriptions
 
+            bool hearthEnabled = ModConfig.EnableHearthsideAttunement != null && ModConfig.EnableHearthsideAttunement.Value;
+            string attuneReason = string.Empty;
+            bool canAttune = _player == null || KeystoneManager.CanAttuneMilestone(_player, milestone, out attuneReason);
+
             if (keystone != null)
             {
                 string artNotice = KeystoneIconManager.HasDedicatedIcon(keystone.Id) ? "" : " <color=#B8A99A><size=80%>(Artwork In Progress)</size></color>";
                 _tooltipTitle.text = $"<b><color=#F59E0B>{keystone.Name}</color></b> <size=80%>(Milestone {milestone})</size>{artNotice}";
-                _tooltipContent.text = $"<color=#F3EBE1>{keystone.Description}</color>";
+                if (hearthEnabled && isUnlocked)
+                {
+                    string statusLine = canAttune
+                        ? "<size=85%><color=#6EE7B7>Active — Ready to re-attune at this hearth.</color></size>"
+                        : $"<size=85%><color=#F59E0B>Active</color> <color=#8C7B6E>—</color> <color=#F87171>{attuneReason}</color></size>";
+                    _tooltipContent.text = $"<color=#F3EBE1>{keystone.Description}</color>\n{statusLine}";
+                }
+                else
+                {
+                    _tooltipContent.text = $"<color=#F3EBE1>{keystone.Description}</color>";
+                }
             }
             else if (isUnlocked)
             {
                 _tooltipTitle.text = $"<b><color=#F59E0B>Milestone {milestone} Socket</color></b>";
-                _tooltipContent.text = "<color=#ECC267>Click to socket a keystone talent.</color>";
+                if (hearthEnabled && !canAttune)
+                {
+                    _tooltipContent.text = $"<color=#F87171>{attuneReason}</color>\n<size=85%><color=#ECC267>Click to preview talents.</color></size>";
+                }
+                else
+                {
+                    _tooltipContent.text = hearthEnabled
+                        ? "<color=#6EE7B7>Hearth ready — Click to attune a keystone talent.</color>"
+                        : "<color=#ECC267>Click to socket a keystone talent.</color>";
+                }
             }
             else
             {
                 _tooltipTitle.text = $"<b><color=#B8A99A>Milestone {milestone} Socket</color></b>";
-                _tooltipContent.text = $"<color=#8C7B6E>Requires Level {milestone}.</color>\n<size=85%><color=#ECC267>Click to preview talents.</color></size>";
+                int reqComfort = ModConfig.GetRequiredComfort(milestone);
+                string hearthNote = hearthEnabled && reqComfort > 0
+                    ? $"\n<size=85%><color=#B8A99A>Hearthside Rite: Comfort {reqComfort}+</color></size>"
+                    : "";
+                _tooltipContent.text = $"<color=#8C7B6E>Requires Level {milestone}.</color>{hearthNote}\n<size=85%><color=#ECC267>Click to preview talents.</color></size>";
             }
 
             PositionTooltip(worldPos, 45f);
@@ -477,9 +511,71 @@ namespace VikingSkills.UI
             _onCloseCallback?.Invoke();
         }
 
+        public void CloseSilent()
+        {
+            HideHoverTooltip();
+            if (_selectionShelf != null) _selectionShelf.SetActive(false);
+            gameObject.SetActive(false);
+        }
+
+        public void RefreshLiveStatus()
+        {
+            if (IsOpen)
+            {
+                UpdateHearthStatusHeader();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+
+        private void UpdateHearthStatusHeader()
+        {
+            if (_hearthStatusText == null) return;
+
+            if (_player == null || ModConfig.EnableHearthsideAttunement == null || !ModConfig.EnableHearthsideAttunement.Value)
+            {
+                _hearthStatusText.text = string.Empty;
+                return;
+            }
+
+            int comfort = KeystoneManager.GetEffectiveComfort(_player);
+            bool isRested = KeystoneManager.HasRestedBuff(_player);
+            bool isResting = KeystoneManager.IsActivelyResting(_player);
+            bool requireRested = ModConfig.RequireRestedStatus != null && ModConfig.RequireRestedStatus.Value;
+
+            string stateLabel;
+            if (isRested)
+            {
+                stateLabel = "<color=#6EE7B7>Rested</color>";
+            }
+            else if (isResting)
+            {
+                stateLabel = "<color=#FCD34D>Resting</color>";
+            }
+            else if (!requireRested)
+            {
+                stateLabel = "<color=#B8A99A>Hearth Active</color>";
+            }
+            else
+            {
+                stateLabel = "<color=#F87171>Unrested</color>";
+            }
+
+            string comfortColor = (isRested || isResting || !requireRested) ? "#F3EBE1" : "#B8A99A";
+            _hearthStatusText.text = $"<color=#E5A93C><b>Hearthside:</b></color> {stateLabel}  <color=#6B5B4E>|</color>  <color={comfortColor}>Comfort <b>{comfort}</b></color>";
+        }
+
         private void RebuildAll()
         {
             if (_player == null) return;
+
+            UpdateHearthStatusHeader();
 
             float savedNorm = _timelineScrollRect != null ? _timelineScrollRect.horizontalNormalizedPosition : 0f;
 
@@ -901,7 +997,10 @@ namespace VikingSkills.UI
             }
             else if (isUnlocked)
             {
-                bTmp.text = "<b><color=#38BDF8>Choose Talent</color></b>";
+                bool canAttuneSocket = _player == null || KeystoneManager.CanAttuneMilestone(_player, milestone, out _);
+                bTmp.text = canAttuneSocket
+                    ? "<b><color=#38BDF8>Choose Talent</color></b>"
+                    : "<b><color=#F87171>Need Hearth</color></b>";
             }
             else
             {
@@ -926,6 +1025,7 @@ namespace VikingSkills.UI
             if (_selectionShelf == null || _shelfOptionsContainer == null || _player == null) return;
 
             _activeShelfMilestone = milestone;
+            UpdateHearthStatusHeader();
             ScrollToLevel(milestone);
 
             for (int i = _shelfOptionsContainer.childCount - 1; i >= 0; i--)
@@ -934,16 +1034,32 @@ namespace VikingSkills.UI
             }
 
             bool isUnlocked = KeystoneManager.IsMilestoneUnlocked(_player, _currentSkill, milestone);
+            bool hearthEnabled = ModConfig.EnableHearthsideAttunement != null && ModConfig.EnableHearthsideAttunement.Value;
+            bool canAttune = KeystoneManager.CanAttuneMilestone(_player, milestone, out string attuneReason);
+            bool canModify = isUnlocked && canAttune;
 
             if (_shelfTitle != null)
             {
-                if (isUnlocked)
+                if (!isUnlocked)
                 {
-                    _shelfTitle.text = $"<b><color=#F59E0B>LEVEL {milestone} KEYSTONES</color></b>\n<size=75%><color=#94A3B8>Click an icon to socket or switch your talent.</color></size>";
+                    _shelfTitle.text = $"<b><color=#94A3B8>LEVEL {milestone} KEYSTONES</color></b>\n<size=72%><color=#EF4444>Locked — Requires Skill Level {milestone}</color></size>";
+                }
+                else if (!canAttune)
+                {
+                    _shelfTitle.text = $"<b><color=#F59E0B>LEVEL {milestone} KEYSTONES</color></b>\n<size=70%><color=#F87171>{attuneReason}</color></size>";
+                }
+                else if (hearthEnabled)
+                {
+                    int reqComfort = ModConfig.GetRequiredComfort(milestone);
+                    int curComfort = KeystoneManager.GetEffectiveComfort(_player);
+                    string hearthReady = reqComfort > 0
+                        ? $"Hearth Ready (Comfort {curComfort}/{reqComfort})"
+                        : "Hearth Ready";
+                    _shelfTitle.text = $"<b><color=#F59E0B>LEVEL {milestone} KEYSTONES</color></b>\n<size=70%><color=#6EE7B7>{hearthReady}</color> <color=#94A3B8>— Click an icon to attune or swap.</color></size>";
                 }
                 else
                 {
-                    _shelfTitle.text = $"<b><color=#94A3B8>LEVEL {milestone} KEYSTONES</color></b>\n<size=75%><color=#EF4444>🔒 Locked (Requires Skill Level {milestone})</color></size>";
+                    _shelfTitle.text = $"<b><color=#F59E0B>LEVEL {milestone} KEYSTONES</color></b>\n<size=75%><color=#94A3B8>Click an icon to socket or switch your talent.</color></size>";
                 }
             }
 
@@ -964,7 +1080,7 @@ namespace VikingSkills.UI
                 {
                     cImg.color = new Color(0.24f, 0.17f, 0.11f, 0.98f);
                 }
-                else if (!isUnlocked)
+                else if (!canModify)
                 {
                     cImg.color = new Color(0.10f, 0.08f, 0.06f, 0.95f);
                 }
@@ -985,17 +1101,17 @@ namespace VikingSkills.UI
 
                 var ibImg = iconBtnObj.GetComponent<Image>();
                 ibImg.sprite = UIHelper.GetSocketRing();
-                ibImg.color = isSelected ? UIHelper.GoldAccent : (isUnlocked ? Color.white : new Color(0.55f, 0.45f, 0.35f, 0.75f));
+                ibImg.color = isSelected ? UIHelper.GoldAccent : (canModify ? Color.white : new Color(0.55f, 0.45f, 0.35f, 0.75f));
 
                 var iconBtn = iconBtnObj.GetComponent<Button>();
                 var colors = iconBtn.colors;
                 if (isSelected)
                 {
                     colors.normalColor = UIHelper.GoldAccent;
-                    colors.highlightedColor = new Color(1.3f, 1.3f, 1.4f, 1f);
+                    colors.highlightedColor = canModify ? new Color(1.3f, 1.3f, 1.4f, 1f) : UIHelper.GoldAccent;
                     colors.pressedColor = UIHelper.GoldAccent;
                 }
-                else if (isUnlocked)
+                else if (canModify)
                 {
                     colors.normalColor = Color.white;
                     colors.highlightedColor = new Color(1.3f, 1.3f, 1.4f, 1f);
@@ -1032,13 +1148,13 @@ namespace VikingSkills.UI
                 var iiImg = iconImgObj.GetComponent<Image>();
                 iiImg.preserveAspect = true;
                 iiImg.sprite = k.GetIcon(_player) ?? _skillSprite ?? UIHelper.GetWhiteSprite();
-                if (!isUnlocked && !isSelected)
+                if (!canModify && !isSelected)
                 {
                     iiImg.color = new Color(0.85f, 0.88f, 0.92f, 0.90f);
                 }
 
-                // Badge indicator (Active if selected, Locked if milestone not yet reached)
-                bool hasBadge = isSelected || !isUnlocked;
+                // Badge indicator (Active if selected, Locked if milestone/hearth requirement not met)
+                bool hasBadge = isSelected || !isUnlocked || !canAttune;
                 if (isSelected)
                 {
                     var selBadge = new GameObject("SelectedBadge", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -1048,12 +1164,14 @@ namespace VikingSkills.UI
                     sbRect.anchorMax = new Vector2(0.5f, 1f);
                     sbRect.pivot = new Vector2(0.5f, 1f);
                     sbRect.anchoredPosition = new Vector2(0f, -138f);
-                    sbRect.sizeDelta = new Vector2(160f, 18f);
+                    sbRect.sizeDelta = new Vector2(180f, 18f);
                     var sbTmp = selBadge.GetComponent<TextMeshProUGUI>();
                     if (font != null) sbTmp.font = font;
                     sbTmp.fontSize = 10.5f;
                     sbTmp.alignment = TextAlignmentOptions.Center;
-                    sbTmp.text = "<color=#F59E0B><b>★ ACTIVE</b></color>";
+                    sbTmp.text = canAttune
+                        ? "<color=#F59E0B><b>★ ACTIVE</b></color>"
+                        : "<color=#F59E0B><b>★ ACTIVE</b></color> <color=#94A3B8>(Hearth Locked)</color>";
                 }
                 else if (!isUnlocked)
                 {
@@ -1064,12 +1182,28 @@ namespace VikingSkills.UI
                     lbRect.anchorMax = new Vector2(0.5f, 1f);
                     lbRect.pivot = new Vector2(0.5f, 1f);
                     lbRect.anchoredPosition = new Vector2(0f, -138f);
-                    lbRect.sizeDelta = new Vector2(170f, 18f);
+                    lbRect.sizeDelta = new Vector2(180f, 18f);
                     var lbTmp = lockBadge.GetComponent<TextMeshProUGUI>();
                     if (font != null) lbTmp.font = font;
                     lbTmp.fontSize = 10.5f;
                     lbTmp.alignment = TextAlignmentOptions.Center;
-                    lbTmp.text = $"<color=#EF4444><b>🔒 REQUIRES LV. {milestone}</b></color>";
+                    lbTmp.text = $"<color=#EF4444><b>REQUIRES LV. {milestone}</b></color>";
+                }
+                else if (!canAttune)
+                {
+                    var hearthBadge = new GameObject("HearthLockedBadge", typeof(RectTransform), typeof(TextMeshProUGUI));
+                    hearthBadge.transform.SetParent(cardObj.transform, false);
+                    var hbRect = hearthBadge.GetComponent<RectTransform>();
+                    hbRect.anchorMin = new Vector2(0.5f, 1f);
+                    hbRect.anchorMax = new Vector2(0.5f, 1f);
+                    hbRect.pivot = new Vector2(0.5f, 1f);
+                    hbRect.anchoredPosition = new Vector2(0f, -138f);
+                    hbRect.sizeDelta = new Vector2(180f, 18f);
+                    var hbTmp = hearthBadge.GetComponent<TextMeshProUGUI>();
+                    if (font != null) hbTmp.font = font;
+                    hbTmp.fontSize = 10.5f;
+                    hbTmp.alignment = TextAlignmentOptions.Center;
+                    hbTmp.text = "<color=#F87171><b>HEARTH REQUIRED</b></color>";
                 }
 
                 // Keystone Name Header
@@ -1085,7 +1219,7 @@ namespace VikingSkills.UI
                 if (font != null) rhTmp.font = font;
                 rhTmp.fontSize = 14.5f;
                 rhTmp.alignment = TextAlignmentOptions.Center;
-                string nameColor = isSelected ? "#F59E0B" : (isUnlocked ? "#F3EBE1" : "#B8A99A");
+                string nameColor = isSelected ? "#F59E0B" : (canModify ? "#F3EBE1" : "#B8A99A");
                 rhTmp.text = $"<b><color={nameColor}>{k.Name}</color></b>";
 
                 // Description Box (Extended area, fills remaining card height since socket talent button is removed)
@@ -1105,21 +1239,46 @@ namespace VikingSkills.UI
 
                 // Selection by pressing icon
                 string kId = k.Id;
+                string kName = k.Name;
+                bool wasSelected = isSelected;
                 iconBtn.onClick.AddListener(() =>
                 {
+                    if (_player == null) return;
+
                     if (!isUnlocked)
                     {
-                        UIHelper.PlaySfx("sfx_gui_cancel");
+                        UIHelper.PlaySfx("sfx_gui_button");
+                        _player.Message(MessageHud.MessageType.TopLeft, $"Requires Skill Level {milestone}.");
                         return;
                     }
 
-                    if (_player != null)
+                    if (!KeystoneManager.SelectKeystone(_player, _currentSkill, milestone, kId, out string failReason))
                     {
-                        KeystoneManager.SelectKeystone(_player, _currentSkill, milestone, kId);
-                        UIHelper.PlaySfx("sfx_build_hammer");
-                        _selectionShelf.SetActive(false);
-                        RebuildAll();
+                        UIHelper.PlaySfx("sfx_gui_button");
+                        if (!string.IsNullOrEmpty(failReason))
+                        {
+                            _player.Message(MessageHud.MessageType.TopLeft, failReason);
+                        }
+                        OpenSelectionShelf(milestone);
+                        return;
                     }
+
+                    if (wasSelected)
+                    {
+                        UIHelper.PlaySfx("sfx_gui_moveitem");
+                        _player.Message(MessageHud.MessageType.TopLeft, $"Unbound {kName}");
+                    }
+                    else
+                    {
+                        UIHelper.PlaySfx("sfx_gui_craftitem_forge_end");
+                        string msg = (ModConfig.EnableHearthsideAttunement != null && ModConfig.EnableHearthsideAttunement.Value)
+                            ? $"Attuned {kName} at the hearth"
+                            : $"Attuned {kName}";
+                        _player.Message(MessageHud.MessageType.TopLeft, msg);
+                    }
+
+                    _selectionShelf.SetActive(false);
+                    RebuildAll();
                 });
             }
 

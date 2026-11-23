@@ -1,49 +1,76 @@
 # VikingSkills
 
-**VikingSkills** transforms Valheim's skills interface into a full-screen, panoramic Nordic **Rune Sanctuary HUD** featuring individual skill progression pillars, sub-level XP tracking, and milestone-socketed **Keystone Skill Trees** powered by VikingLib.
+**VikingSkills** transforms Valheim's skills interface into a panoramic Nordic **Rune Sanctuary**, replacing shallow passive creep with **240 bespoke Keystone talents** across all **24 skills** and grounding character specialization in **Hearthside Rested Attunement**.
 
 ![Rune Sanctuary Skill Overview](https://raw.githubusercontent.com/DigitalVikings/VikingSkills/main/skill_overview_hud.png)
 ![Woodcutting Skill Tree](https://raw.githubusercontent.com/DigitalVikings/VikingSkills/main/woodcutting_skill_ui.png)
 
-> ⚠️ **Work in Progress (Pre-Release v0.1.0)**: This mod is in active development and has not been tested extensively. Features, balance, and mechanics may change, and unintended bugs or edge cases may occur. Backup your character and world saves before testing.
-
-> ⚡ **Powered by VikingLib**: This mod requires [VikingLib](https://valheim.thunderstore.io/package/DigitalVikings/VikingLib/). 
-> VikingLib replaces Valheim's native combat calculation and stat engines. Not all mods may be compatible / work as expected with this.
+> ⚡ **Powered by VikingLib**: Requires [VikingLib](https://valheim.thunderstore.io/package/DigitalVikings/VikingLib/) by **DigitalVikings**.
+> VikingLib provides the shared combat, stat, and skill architecture powering VikingSkills.
 
 ---
 
-## How It Works
+## Key Features
 
-Opening your skills menu displays an expansive horizontal sanctuary tracking all discovered proficiencies:
+- **240 Bespoke Keystones Across All 24 Skills**: Every vanilla skill features **5 milestone sockets** at levels **20, 40, 60, 80, and 100**, each offering a meaningful choice between 2 thematic Keystones — complete with **240/240 hand-finished runic emblems**.
+- **Hearthside Rested Attunement**: Socketing or swapping Keystones is grounded in Valheim's survival loop. Attuning higher-tier rites requires being **Rested** (or actively Resting) by a hearth of sufficient **Comfort** (`1 / 4 / 8 / 12 / 16` by default). Already-socketed Keystones remain active everywhere even after your Rested buff expires, and comfort mods automatically count toward your total.
+- **Panoramic Rune Sanctuary HUD**: Browse all discovered skills on a full-screen Nordic sanctuary organized by archetype tabs, inspect live sub-level XP bars, and open any skill's scrollable **Level 1–100 Timeline Drawer** to preview or attune talents.
+- **Pure Milestone Progression (Configurable)**: By default, individual skill levels no longer cause silent stat bloat — power flows intentionally from your chosen Keystones. Admins can re-enable vanilla fractional scaling at any time.
+- **Flexible XP & Death Penalty Controls**: Tune global or per-category skill gain multipliers, configure death skill loss (`None`, `Percentage`, or `FlatLevels`), and protect unlocked milestone floors so dying never strips active Keystones.
+- **Save-Safe Character Persistence**: Active Keystones are stored cleanly in native character metadata and survive multiplayer sessions, mod updates, and server transfers without custom world objects.
 
-- **Dedicated Rune Pillars**: Every skill features a vertical glowing pillar displaying progression from Level 0 to 100, live sub-level percentages, and milestone notches at levels 25, 50, 75, and 100.
-- **Interactive Keystone Trees**: Clicking any skill pillar opens its dedicated **Rune Tree Drawer**. At each milestone (levels 25, 50, 75, 100), choose and socket 1 of 2 thematic passive Keystones (Novice, Adept, Master, and Legendary rites).
-- **Dynamic Stat Integration**: Socketed Keystones inject declarative stat bonuses into VikingLib, modifying weapon damage, attack speed, sprint efficiency, jump costs, stealth, and resource extraction yields.
-- **Seamless Character Persistence**: Socketed keystones and active pillars save cleanly into native character metadata (`Player.m_customData`), surviving multiplayer disconnects and server hops without custom network ZDOs.
+---
 
 <details>
-<summary><b>Click to expand Skill Categories & Archetypes</b></summary>
+<summary><b>Skill Categories & Archetypes (24 Skills / 240 Keystones)</b></summary>
 
-Filter and pan across archetypes via category tabs at the top of the sanctuary:
+Filter across five archetype tabs at the top of the Rune Sanctuary:
 
-| Category | Archetype Glow | Included Skills |
-| :--- | :--- | :--- |
-| **[⚔ WEAPONS]** | Crimson Ember | Swords, Knives, Clubs, Polearms, Spears, Axes, Bows, Crossbows, Unarmed |
-| **[🛡 DEFENSE]** | Steel Azure | Blocking, Dodging |
-| **[🔮 MAGIC]** | Mystic Purple | Elemental Magic, Blood Magic |
-| **[🏃 MOBILITY]** | Amber Sun | Run, Jump, Sneak, Swim |
-| **[🌲 RESOURCES]** | Forest Jade | Woodcutting, Pickaxes, Farming, Crafting, Cooking, Fishing |
+| Category | Archetype Glow | Included Skills | Keystones |
+| :--- | :--- | :--- | :---: |
+| **WEAPONS** | Crimson Ember | Axes, Clubs, Swords, Spears, Polearms, Knives, Unarmed, Bows, Crossbows | 90 |
+| **DEFENSE** | Steel Azure | Blocking, Dodge | 20 |
+| **MAGIC** | Mystic Purple | Elemental Magic, Blood Magic | 20 |
+| **MOBILITY** | Amber Sun | Run, Jump, Sneak, Swim, Ride | 50 |
+| **RESOURCES** | Forest Jade | Woodcutting, Pickaxes, Farming, Crafting, Cooking, Fishing | 60 |
 
 </details>
 
 <details>
-<summary><b>Click to expand Milestone Keystone Progression (Tiers I–IV)</b></summary>
+<summary><b>Milestone Tiers & Hearthside Comfort Thresholds (Tiers I–V)</b></summary>
 
-| Milestone | Tier | Rite Classification | Description |
-| :--- | :--- | :--- | :--- |
-| **Level 25** | Tier I | Novice Rite | Foundational efficiency and handling improvements for the active discipline. |
-| **Level 50** | Tier II | Adept Rite | Specialized mechanical enhancements altering stamina costs and attack tempo. |
-| **Level 75** | Tier III | Master Rite | High-tier mastery granting substantial situational damage or utility bonuses. |
-| **Level 100** | Tier IV | Legendary Rite | Pinnacle capstone passive unlocking unique combat procs or major resource multipliers. |
+Each milestone unlocks 2 distinct Keystone options. With Hearthside Attunement enabled, socketing or swapping talents at each tier requires resting at a hearth meeting that tier's Comfort threshold (all values configurable):
+
+| Milestone | Tier | Default Comfort | Role |
+| :--- | :---: | :---: | :--- |
+| **Level 20** | Tier I | **Comfort 1+** (Campfire) | Foundational efficiency, handling, and early specialization. |
+| **Level 40** | Tier II | **Comfort 4+** (Basic Shelter) | Specialized combat tempo, stamina flow, and utility shifts. |
+| **Level 60** | Tier III | **Comfort 8+** (Cozy Homestead) | Mid-game mastery unlocking strong situational procs and multipliers. |
+| **Level 80** | Tier IV | **Comfort 12+** (Longhouse) | High-tier synergy combining dual combat or survival strengths. |
+| **Level 100** | Tier V | **Comfort 16+** (Grand Mead Hall) | Pinnacle capstone defining your Viking's archetype mastery. |
 
 </details>
+
+---
+
+## Configuration
+
+All balance-affecting settings are **server-authoritative** (automatically synced to clients in multiplayer when Jötunn is installed) and organized into five clean sections in `com.digitalvikings.vikingskills.cfg`:
+
+- **`01 - General`**: Master enable toggle, vanilla fractional skill scaling toggle, and UI/attunement audio effects.
+- **`02 - Visual Theme`**: Custom hex accent colors for each of the five skill category tabs and rune glows.
+- **`03 - Progression - Skill Loss on Death`**: Choose `None`, `Percentage`, or `FlatLevels`, configure exact loss values, and toggle milestone floor protection.
+- **`04 - Progression - Skill Gain Multipliers`**: Exact global and per-category XP multipliers overriding vanilla world modifiers.
+- **`05 - Hearthside Attunement`**: Master toggle (disable to allow swapping Keystones anywhere), Rested/Resting status requirement toggle, and per-tier Comfort thresholds (`Lv20`, `Lv40`, `Lv60`, `Lv80`, `Lv100`).
+
+---
+
+## Installation & Requirements
+
+1. Install **BepInExPack Valheim**.
+2. Install **DigitalVikings-VikingLib** (required) and **Jötunn** (recommended for multiplayer config sync).
+3. Install **DigitalVikings-VikingSkills** via your mod manager (Gale / r2modman) or extract into `BepInEx/plugins/`.
+
+---
+
+Created by **DigitalVikings**.

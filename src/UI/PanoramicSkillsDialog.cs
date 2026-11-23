@@ -12,28 +12,29 @@ namespace VikingSkills.UI
 {
     public class PanoramicSkillsDialog : MonoBehaviour
     {
+        public const float FilterBarHeight = 40f;
+
         public static PanoramicSkillsDialog? Instance { get; private set; }
-        public static bool IsOpen => Instance != null && Instance.gameObject.activeSelf;
-        private static int _lastClosedFrame = -1;
-        public static bool WasClosedThisFrame => _lastClosedFrame == Time.frameCount;
+        public static bool IsOpen => Instance != null && Instance.gameObject.activeInHierarchy;
+
+        public bool IsDrawerOpen => _drawer != null && _drawer.IsOpen;
 
         private ScrollRect? _scrollRect;
         private RectTransform? _contentTransform;
-        private TMP_Text? _headerTitle;
         private SkillTreeDrawerUI? _drawer;
         private SkillCategoryType? _activeCategoryFilter = null;
         private readonly List<RuneColumnUI> _activeColumns = new();
         private Player? _cachedPlayer;
+        private bool _hasPopulated;
+        private int _lastStateSignature;
         private GameObject? _hoverTooltip;
         private TMP_Text? _tooltipTitle;
         private TMP_Text? _tooltipContent;
 
-        public static void EnsureInitialized(Transform parentCanvas)
+        public static PanoramicSkillsDialog CreateEmbedded(RectTransform container)
         {
-            if (Instance != null) return;
-
-            var go = new GameObject("VikingSkills_PanoramicDialog", typeof(RectTransform));
-            go.transform.SetParent(parentCanvas, false);
+            var go = new GameObject("VikingSkills_PanoramicView", typeof(RectTransform));
+            go.transform.SetParent(container, false);
 
             var rect = go.GetComponent<RectTransform>();
             rect.anchorMin = Vector2.zero;
@@ -41,21 +42,26 @@ namespace VikingSkills.UI
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
 
-            Instance = go.AddComponent<PanoramicSkillsDialog>();
-            Instance.BuildInterface();
-            go.SetActive(false);
+            var view = go.AddComponent<PanoramicSkillsDialog>();
+            view.BuildEmbeddedInterface();
+            Instance = view;
 
-            KeystoneManager.OnKeystonesChanged += Instance.OnKeystonesChangedHandler;
+            KeystoneManager.OnKeystonesChanged += view.OnKeystonesChangedHandler;
+            return view;
         }
 
         private void OnDestroy()
         {
             KeystoneManager.OnKeystonesChanged -= OnKeystonesChangedHandler;
+            if (Instance == this)
+            {
+                Instance = null;
+            }
         }
 
         private void OnKeystonesChangedHandler()
         {
-            if (IsOpen && _cachedPlayer != null)
+            if (gameObject.activeInHierarchy && _cachedPlayer != null)
             {
                 Populate(_cachedPlayer, preserveScroll: true);
             }
@@ -80,96 +86,155 @@ namespace VikingSkills.UI
             }
         }
 
-        public static void Show(Player player)
+        public void OnTabShow()
         {
-            if (!ModConfig.ModEnabled.Value) return;
-
-            if (Instance == null && InventoryGui.instance != null)
+            HideHoverTooltip();
+            var player = Player.m_localPlayer;
+            if (player == null)
             {
-                EnsureInitialized(InventoryGui.instance.transform);
+                ClearColumns();
+                _cachedPlayer = null;
+                _hasPopulated = false;
+                return;
             }
 
-            if (Instance != null)
+            RefreshIfChanged(player, force: !_hasPopulated, preserveScroll: _hasPopulated);
+        }
+
+        public void OnTabHide()
+        {
+            HideHoverTooltip();
+            if (_drawer != null && _drawer.IsOpen)
             {
-                Instance.transform.SetAsLastSibling();
-                Instance._cachedPlayer = player;
-                Instance.Populate(player);
-                Instance.gameObject.SetActive(true);
-                UIHelper.PlaySfx("sfx_gui_button");
+                _drawer.CloseSilent();
             }
         }
 
-        public static void Hide()
+        public void OnTabRefresh()
         {
-            if (Instance != null && Instance.gameObject.activeSelf)
+            var player = Player.m_localPlayer;
+            if (player == null)
             {
-                Instance.HideHoverTooltip();
-                if (Instance._drawer != null && Instance._drawer.gameObject.activeSelf)
+                if (_activeColumns.Count > 0)
                 {
-                    Instance._drawer.Close();
-                    return;
+                    ClearColumns();
+                }
+                _cachedPlayer = null;
+                _hasPopulated = false;
+                return;
+            }
+
+            RefreshIfChanged(player, force: false, preserveScroll: true);
+            _drawer?.RefreshLiveStatus();
+        }
+
+        public bool TryHandleBack()
+        {
+            HideHoverTooltip();
+            if (_drawer != null && _drawer.IsOpen)
+            {
+                _drawer.Close();
+                return true;
+            }
+
+            return false;
+        }
+
+        private void RefreshIfChanged(Player player, bool force, bool preserveScroll)
+        {
+            int signature = ComputeStateSignature(player);
+            if (!force && _hasPopulated && _cachedPlayer == player && signature == _lastStateSignature)
+            {
+                return;
+            }
+
+            Populate(player, preserveScroll: preserveScroll && _cachedPlayer == player);
+        }
+
+        private int ComputeStateSignature(Player player)
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + (_activeCategoryFilter.HasValue ? (int)_activeCategoryFilter.Value : -1);
+
+                var skillsManager = player.GetSkills();
+                if (skillsManager == null) return hash;
+
+                var skills = skillsManager.GetSkillList();
+                for (int i = 0; i < skills.Count; i++)
+                {
+                    var s = skills[i];
+                    if (s == null || s.m_info == null) continue;
+                    if (s.m_level <= 0f && s.m_accumulator <= 0f) continue;
+
+                    var skillType = s.m_info.m_skill;
+                    hash = hash * 31 + (int)skillType;
+                    hash = hash * 31 + Mathf.RoundToInt(s.m_level * 100f);
+                    hash = hash * 31 + Mathf.RoundToInt(s.GetLevelPercentage() * 1000f);
+
+                    for (int mIdx = 0; mIdx < KeystoneRegistry.Milestones.Length; mIdx++)
+                    {
+                        var selected = KeystoneManager.GetSelectedKeystone(player, skillType, KeystoneRegistry.Milestones[mIdx]);
+                        hash = hash * 31 + (selected != null ? selected.Id.GetHashCode() : 0);
+                    }
                 }
 
-                Instance.gameObject.SetActive(false);
-                _lastClosedFrame = Time.frameCount;
-                UIHelper.PlaySfx("sfx_gui_button");
+                return hash;
             }
         }
 
-        private void BuildInterface()
+        private void ClearColumns()
+        {
+            foreach (var col in _activeColumns)
+            {
+                if (col != null) Destroy(col.gameObject);
+            }
+            _activeColumns.Clear();
+        }
+
+        private void BuildEmbeddedInterface()
         {
             var font = UIHelper.GetValheimFont();
             var whiteSprite = UIHelper.GetWhiteSprite();
 
-            // 1. Full Screen Dark Peat/Timber Hearth Backdrop
-            var backdrop = gameObject.AddComponent<Image>();
-            backdrop.sprite = whiteSprite;
-            backdrop.color = new Color(0.06f, 0.05f, 0.04f, 0.96f);
+            // 1. Compact Category Filter Rail seated directly beneath VikingHubDialog's unified header
+            var filterBarObj = new GameObject("FilterBar", typeof(RectTransform), typeof(Image));
+            filterBarObj.transform.SetParent(transform, false);
+            var filterBarRect = filterBarObj.GetComponent<RectTransform>();
+            filterBarRect.anchorMin = new Vector2(0f, 1f);
+            filterBarRect.anchorMax = new Vector2(1f, 1f);
+            filterBarRect.pivot = new Vector2(0.5f, 1f);
+            filterBarRect.anchoredPosition = Vector2.zero;
+            filterBarRect.sizeDelta = new Vector2(0f, FilterBarHeight);
 
-            // 2. Unified Top Header Banner (Flat top, bronze bottom trim, flush with top of screen)
-            var headerObj = new GameObject("HeaderBanner", typeof(RectTransform), typeof(Image));
-            headerObj.transform.SetParent(transform, false);
-            var headerRect = headerObj.GetComponent<RectTransform>();
-            headerRect.anchorMin = new Vector2(0f, 1f);
-            headerRect.anchorMax = new Vector2(1f, 1f);
-            headerRect.pivot = new Vector2(0.5f, 1f);
-            headerRect.anchoredPosition = Vector2.zero;
-            headerRect.sizeDelta = new Vector2(0f, 82f);
-            var headerImg = headerObj.GetComponent<Image>();
-            headerImg.sprite = UIHelper.GetHeaderBanner();
-            headerImg.type = Image.Type.Sliced;
-            headerImg.color = Color.white;
+            var filterBarImg = filterBarObj.GetComponent<Image>();
+            filterBarImg.sprite = whiteSprite;
+            filterBarImg.color = new Color(0.08f, 0.06f, 0.05f, 0.72f);
 
-            // Close / Return Button (Top-Right Corner of Header Banner)
-            UIHelper.CreateReturnButton(headerObj.transform, new Vector2(-24f, -10f), new Vector2(136f, 36f),
-                new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                "RETURN", Hide, font);
+            // Subtle bottom bronze hairline rule along the filter rail
+            var ruleObj = new GameObject("BottomRule", typeof(RectTransform), typeof(Image));
+            ruleObj.transform.SetParent(filterBarObj.transform, false);
+            var ruleRect = ruleObj.GetComponent<RectTransform>();
+            ruleRect.anchorMin = new Vector2(0f, 0f);
+            ruleRect.anchorMax = new Vector2(1f, 0f);
+            ruleRect.pivot = new Vector2(0.5f, 0f);
+            ruleRect.anchoredPosition = Vector2.zero;
+            ruleRect.sizeDelta = new Vector2(0f, 1.5f);
+            var ruleImg = ruleObj.GetComponent<Image>();
+            ruleImg.sprite = whiteSprite;
+            ruleImg.color = new Color(0.42f, 0.32f, 0.20f, 0.50f);
+            ruleImg.raycastTarget = false;
 
-            // Main Title (Upper tier of Header Banner)
-            var titleObj = new GameObject("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-            titleObj.transform.SetParent(headerObj.transform, false);
-            var titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0.5f, 1f);
-            titleRect.anchorMax = new Vector2(0.5f, 1f);
-            titleRect.pivot = new Vector2(0.5f, 1f);
-            titleRect.anchoredPosition = new Vector2(0f, -12f);
-            titleRect.sizeDelta = new Vector2(300f, 24f);
-            _headerTitle = titleObj.GetComponent<TextMeshProUGUI>();
-            if (font != null) _headerTitle.font = font;
-            string skillsLabel = Localization.instance != null ? Localization.instance.Localize("$inventory_skills") : "SKILLS";
-            _headerTitle.text = $"<b><color=#E5A93C>—  {skillsLabel.ToUpper()}  —</color></b>";
-            _headerTitle.fontSize = 17f;
-            _headerTitle.alignment = TextAlignmentOptions.Center;
-
-            // 3. Category Filter Tabs Row (Sleek text tabs seamlessly seated on the bottom rail)
+            // Category Filter Tabs Row
             var filterRowObj = new GameObject("FilterRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-            filterRowObj.transform.SetParent(headerObj.transform, false);
+            filterRowObj.transform.SetParent(filterBarObj.transform, false);
             var filterRowRect = filterRowObj.GetComponent<RectTransform>();
             filterRowRect.anchorMin = new Vector2(0.5f, 0f);
-            filterRowRect.anchorMax = new Vector2(0.5f, 0f);
-            filterRowRect.pivot = new Vector2(0.5f, 0f);
-            filterRowRect.anchoredPosition = new Vector2(0f, 0f);
-            filterRowRect.sizeDelta = new Vector2(800f, 28f);
+            filterRowRect.anchorMax = new Vector2(0.5f, 1f);
+            filterRowRect.pivot = new Vector2(0.5f, 0.5f);
+            filterRowRect.offsetMin = new Vector2(-420f, 0f);
+            filterRowRect.offsetMax = new Vector2(420f, 0f);
 
             var filterLayout = filterRowObj.GetComponent<HorizontalLayoutGroup>();
             filterLayout.spacing = 16f;
@@ -186,7 +251,7 @@ namespace VikingSkills.UI
             CreateFilterButton(filterRowObj.transform, font, whiteSprite, "MOBILITY", SkillCategoryType.Mobility);
             CreateFilterButton(filterRowObj.transform, font, whiteSprite, "RESOURCES", SkillCategoryType.Resources);
 
-            // 4. Horizontal Panoramic Scroll View (Begins cleanly below the header banner)
+            // 2. Horizontal Panoramic Scroll View (Begins cleanly below the filter rail)
             var scrollObj = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect));
             scrollObj.transform.SetParent(transform, false);
             var scrollRectTransform = scrollObj.GetComponent<RectTransform>();
@@ -194,7 +259,7 @@ namespace VikingSkills.UI
             scrollRectTransform.anchorMax = new Vector2(1f, 1f);
             scrollRectTransform.pivot = new Vector2(0.5f, 0.5f);
             scrollRectTransform.offsetMin = new Vector2(20f, 20f);
-            scrollRectTransform.offsetMax = new Vector2(-20f, -88f);
+            scrollRectTransform.offsetMax = new Vector2(-20f, -(FilterBarHeight + 6f));
 
             _scrollRect = scrollObj.GetComponent<ScrollRect>();
             _scrollRect.horizontal = true;
@@ -234,13 +299,13 @@ namespace VikingSkills.UI
 
             _scrollRect.content = _contentTransform;
 
-            // 5. Skill Tree Detail Drawer Component
+            // 3. Skill Tree Detail Drawer Component
             _drawer = SkillTreeDrawerUI.Create(transform, () =>
             {
                 if (_cachedPlayer != null) Populate(_cachedPlayer, preserveScroll: true);
             });
 
-            // 7. Hover Tooltip Overlay (Top-level)
+            // 4. Hover Tooltip Overlay (Top-level)
             BuildHoverTooltip(transform, font);
         }
 
@@ -358,11 +423,11 @@ namespace VikingSkills.UI
             btnObj.transform.SetParent(parent, false);
 
             var rect = btnObj.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(110f, 28f);
+            rect.sizeDelta = new Vector2(110f, FilterBarHeight);
 
             var le = btnObj.GetComponent<LayoutElement>();
             le.preferredWidth = 110f;
-            le.preferredHeight = 28f;
+            le.preferredHeight = FilterBarHeight;
 
             // Transparent hit-target image (No dark boxes or borders!)
             var img = btnObj.GetComponent<Image>();
@@ -371,18 +436,19 @@ namespace VikingSkills.UI
 
             bool isActive = _activeCategoryFilter == filterCategory;
 
-            // Active golden underline indicator bar flush along the bottom of the banner
+            // Active golden underline indicator bar flush along the bottom bronze rule
             var indicatorObj = new GameObject("ActiveIndicator", typeof(RectTransform), typeof(Image));
             indicatorObj.transform.SetParent(btnObj.transform, false);
             var indRect = indicatorObj.GetComponent<RectTransform>();
             indRect.anchorMin = new Vector2(0.10f, 0f);
             indRect.anchorMax = new Vector2(0.90f, 0f);
             indRect.pivot = new Vector2(0.5f, 0f);
-            indRect.anchoredPosition = Vector2.zero;
+            indRect.anchoredPosition = new Vector2(0f, 1.5f);
             indRect.sizeDelta = new Vector2(0f, 3f);
             var indImg = indicatorObj.GetComponent<Image>();
             indImg.sprite = whiteSprite;
             indImg.color = isActive ? UIHelper.AmberGoldConduit : Color.clear;
+            indImg.raycastTarget = false;
 
             var textObj = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
             textObj.transform.SetParent(btnObj.transform, false);
@@ -451,11 +517,7 @@ namespace VikingSkills.UI
             float savedScroll = (preserveScroll && _scrollRect != null) ? _scrollRect.horizontalNormalizedPosition : 0f;
 
             // Clear previous column instances
-            foreach (var col in _activeColumns)
-            {
-                if (col != null) Destroy(col.gameObject);
-            }
-            _activeColumns.Clear();
+            ClearColumns();
 
             var skillsManager = player.GetSkills();
             if (skillsManager == null) return;
@@ -525,6 +587,8 @@ namespace VikingSkills.UI
             }
 
             UpdateContentLayout(filteredSkills.Count, preserveScroll ? savedScroll : 0f);
+            _hasPopulated = true;
+            _lastStateSignature = ComputeStateSignature(player);
         }
 
         private void UpdateContentLayout(int columnCount, float targetScrollPos = 0f)
@@ -573,24 +637,12 @@ namespace VikingSkills.UI
 
         private void Update()
         {
-            if (!gameObject.activeSelf) return;
-
-            // Escape or Tab closes drawer if open, otherwise closes the dialog
-            if (ZInput.GetButtonDown("JoyButtonB") || Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Tab))
-            {
-                if (_drawer != null && _drawer.gameObject.activeSelf)
-                {
-                    _drawer.Close();
-                    return;
-                }
-
-                Hide();
-                return;
-            }
+            if (!gameObject.activeInHierarchy) return;
+            if (IsDrawerOpen) return;
 
             // Mouse wheel horizontal smooth panning
             float mouseScroll = Input.mouseScrollDelta.y;
-            if (Mathf.Abs(mouseScroll) > 0.01f && _scrollRect != null)
+            if (Mathf.Abs(mouseScroll) > 0.01f && _scrollRect != null && _scrollRect.horizontal)
             {
                 _scrollRect.horizontalNormalizedPosition = Mathf.Clamp01(
                     _scrollRect.horizontalNormalizedPosition - (mouseScroll * 0.08f)

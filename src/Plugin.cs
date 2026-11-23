@@ -1,7 +1,10 @@
-﻿using BepInEx;
+﻿using System;
+using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using VikingLib.UI.Hub;
 using VikingSkills.Configuration;
+using VikingSkills.UI;
 
 namespace VikingSkills
 {
@@ -14,10 +17,11 @@ namespace VikingSkills
     {
         public const string ModGuid = "com.digitalvikings.vikingskills";
         public const string ModName = "VikingSkills";
-        public const string ModVersion = "0.1.3";
+        public const string ModVersion = "0.2.0";
 
         internal static ManualLogSource Log = null!;
         private Harmony _harmony = null!;
+        private SkillsHubTab? _skillsHubTab;
 
         private void Awake()
         {
@@ -45,6 +49,11 @@ namespace VikingSkills
             // Initialize SkillProgressionManager for death penalties and progression curves
             Services.SkillProgressionManager.Init();
 
+            // Register Skills tab into VikingLib's unified VikingHub Character UI
+            _skillsHubTab = new SkillsHubTab();
+            SyncHubTabRegistration();
+            ModConfig.ModEnabled.SettingChanged += OnModEnabledChanged;
+
             // Apply Harmony patches
             _harmony = new Harmony(ModGuid);
             _harmony.PatchAll();
@@ -64,6 +73,25 @@ namespace VikingSkills
             }
         }
 
+        private void OnModEnabledChanged(object sender, EventArgs args)
+        {
+            SyncHubTabRegistration();
+        }
+
+        private void SyncHubTabRegistration()
+        {
+            if (_skillsHubTab == null) return;
+
+            if (ModConfig.ModEnabled.Value)
+            {
+                VikingHubRegistry.RegisterTab(_skillsHubTab);
+            }
+            else
+            {
+                VikingHubRegistry.UnregisterTab(SkillsHubTab.TabId);
+            }
+        }
+
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private void HookJotunnSync()
         {
@@ -75,6 +103,12 @@ namespace VikingSkills
 
         private void OnDestroy()
         {
+            if (ModConfig.ModEnabled != null)
+            {
+                ModConfig.ModEnabled.SettingChanged -= OnModEnabledChanged;
+            }
+
+            VikingHubRegistry.UnregisterTab(SkillsHubTab.TabId);
             _harmony?.UnpatchSelf();
         }
     }

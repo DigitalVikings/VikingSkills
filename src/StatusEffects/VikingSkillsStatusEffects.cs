@@ -10,8 +10,6 @@ namespace VikingSkills.StatusEffects
         public const string AdrenalineId = "SE_VS_Adrenaline";
         public const string ShadowveilId = "SE_VS_Shadowveil";
         public const string StoneGuardId = "SE_VS_StoneGuard";
-        public const string QuickdrawId = "SE_VS_Quickdraw";
-        public const string HarpoonMasterId = "SE_VS_HarpoonMaster";
 
         private static bool _initialized = false;
 
@@ -68,25 +66,6 @@ namespace VikingSkills.StatusEffects
                 .WithDuration(4.0f)
                 .WithMaxStacks(1, StackPolicy.RefreshDurationOnly)
                 .WithMultiplierModifier(CharacterStats.ResistancePhysical, 0.85f)
-                .BuildAndRegister();
-
-            // 6. Quickdraw: Bow draw speed temporary boost
-            StatusEffectBuilder.Create(QuickdrawId)
-                .WithName("Quickdraw")
-                .WithTooltip("Rapid stringing! +25% bow draw speed.")
-                .WithDuration(6.0f)
-                .WithMaxStacks(1, StackPolicy.RefreshDurationOnly)
-                .WithIncreasedModifier(CharacterStats.BowDrawSpeed, 0.25f)
-                .BuildAndRegister();
-
-            // 7. Harpooner's Swiftness: Spear mobility and stamina boost
-            StatusEffectBuilder.Create(HarpoonMasterId)
-                .WithName("Harpooner's Swiftness")
-                .WithTooltip("+15% movement speed and +20% spear stamina efficiency.")
-                .WithDuration(6.0f)
-                .WithMaxStacks(1, StackPolicy.RefreshDurationOnly)
-                .WithIncreasedModifier(CharacterStats.RunSpeed, 0.15f)
-                .WithIncreasedModifier(CharacterStats.SpearsEfficiency, 0.20f)
                 .BuildAndRegister();
         }
     }

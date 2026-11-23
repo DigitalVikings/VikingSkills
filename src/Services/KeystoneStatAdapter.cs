@@ -148,7 +148,30 @@ namespace VikingSkills.Services
                 }
             };
 
-            // 9. Weapon Tooltip Keystone Traits
+            // 9. Combat Procs: PostHitProcs (On-Hit Keystones)
+            DamagePipeline.RegisterPostHitProc(priority: 110, ctx =>
+            {
+                if (ctx == null || ctx.IsPreview || ctx.IsCancelled || ctx.IsKillingBlow) return;
+                if (ctx.Target == null || ctx.Target.IsDead()) return;
+                if (!ctx.Flags.HasFlag(DamageFlags.CanTriggerProcs) || ctx.Flags.HasFlag(DamageFlags.IsReflected)) return;
+                if (ctx.GetTotalDamage() <= 0.001f) return;
+
+                if (ctx.Attacker is Player player && player == Player.m_localPlayer)
+                {
+                    if (ctx.Hit.m_skill == Skills.SkillType.Bows &&
+                        KeystoneManager.HasKeystone(player, Skills.SkillType.Bows, 100, "bow_100_cripple") &&
+                        KeystoneManager.IsMilestoneUnlocked(player, Skills.SkillType.Bows, 100))
+                    {
+                        if (DamagePipeline.ApplyOnHitStatus(ctx.Attacker, ctx.Target, CanonicalStatusEffects.CrippleId, 0.15f, 6.0f))
+                        {
+                            ctx.Trace?.RecordStep(DamagePhase.PostHitProcs, "Pinning Arrow",
+                                "Inflicted Crippled (-15% movement speed for 6.0s)", 0.15f);
+                        }
+                    }
+                }
+            });
+
+            // 10. Weapon Tooltip Keystone Traits
             TooltipEngine.RegisterLineProvider((item, player) =>
             {
                 if (item?.m_shared == null || player == null) return null;
@@ -169,7 +192,7 @@ namespace VikingSkills.Services
                 return lines;
             }, priority: 10);
 
-            // 10. Hugin's Compendium Category
+            // 11. Hugin's Compendium Category
             CharacterStatsGlossaryPanel.RegisterCustomCategory("Socketed Runic Keystones", player =>
             {
                 var lines = new List<string>();

@@ -1,13 +1,13 @@
-# KeystoneSkills — Development Roadmap
+# VikingSkills — Development Roadmap
 
-A structured plan for transitioning **KeystoneSkills** from a panoramic HUD replacement into a complete, balanced RPG progression system for Valheim.
+A structured plan for evolving **VikingSkills** from a panoramic Nordic HUD replacement into a complete, deeply integrated RPG progression system for Valheim.
 
 ---
 
 ## 🎯 Guiding Design Principles
 1. **Meaningful Specialization**: Shift power from overwhelming passive stat creep into impactful, distinct milestone Keystones.
 2. **Immersive Viking Mechanics**: Ground character attunement and respecs in the survival loop (the Rested & Comfort system).
-3. **Passive & Unique**: Keystones should remain primarily passive or combo-modifying (e.g., combo finishers, stance adjustments, conditional perks) rather than clunky active hotbar abilities.
+3. **Passive & Unique**: Keystones remain primarily passive or combo-modifying (e.g., combo finishers, stance adjustments, conditional perks) rather than clunky active hotbar abilities.
 4. **Ecosystem Friendly**: Provide seamless discovery and configurable power budgets for third-party community skills.
 
 ---
@@ -16,50 +16,51 @@ A structured plan for transitioning **KeystoneSkills** from a panoramic HUD repl
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ Phase 1: Rested Attunement & Respec Gating                 │
-│ • Tie talent socketing/swapping to Rested comfort thresholds │
+│ Phase 1: Hearthside Rested Attunement & Respec Gating   [✓] │
+│ • Tie talent socketing/swapping to Rested & Comfort tiers   │
 ├─────────────────────────────────────────────────────────────┤
-│ Phase 2: Power Budget Rebalancing & Unique Mechanics        │
-│ • Scale back vanilla passive creep; move power to keystones  │
+│ Phase 2: Power Budget Rebalancing & Unique Mechanics    [~] │
+│ • Scale back vanilla passive creep; move power to keystones │
 │ • Unique combo modifiers (Axe 360° spin finisher, etc.)     │
 ├─────────────────────────────────────────────────────────────┤
-│ Phase 3: Community & Modded Skill Integration               │
+│ Phase 3: Community & Modded Skill Integration           [~] │
 │ • Dynamic discovery of third-party skills (Smoothbrain, etc)│
-│ • Configurable power bounds & clean pillar rendering        │
+│ • Configurable power bounds & external JSON schema          │
 ├─────────────────────────────────────────────────────────────┤
-│ Phase 4: Full Keystone Catalog Conceptualization            │
-│ • Complete matrix of 4 milestones × 2 perks for all skills  │
+│ Phase 4: Full Keystone Catalog (24 Skills / 240 Nodes)  [✓] │
+│ • Complete matrix of 5 milestones × 2 perks across 24 skills│
 ├─────────────────────────────────────────────────────────────┤
-│ Phase 5: Iconography & Visual Polish                        │
-│ • Unique runic iconography & hearthside attunement VFX      │
+│ Phase 5: Iconography & Visual Polish                    [~] │
+│ • 240/240 bespoke runic icons [✓] & hearthside VFX/buffs    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Phase 1: Rested Attunement & Respec Gating
-*Objective: Immerse keystone selection into the core Valheim hearth-and-home loop.*
+### Phase 1: Hearthside Rested Attunement & Respec Gating — ✅ Completed
+*Objective: Immerse keystone selection into the core Valheim hearth-and-home loop while keeping already-socketed keystones active everywhere.*
 
-- [ ] **Comfort Level Thresholds**:
-  - **Milestone 25 (Novice Rite)**: Requires **Rested** (Comfort ≥ 1, basic campfire/bed).
-  - **Milestone 50 (Adept Rite)**: Requires **Rested** (Comfort ≥ 4, sheltered shelter with fire).
-  - **Milestone 75 (Master Rite)**: Requires **Rested** (Comfort ≥ 8, cozy homestead with hearth & rug).
-  - **Milestone 100 (Legendary Rite)**: Requires **Rested** (Comfort ≥ 12, grand mead hall/longhouse).
-- [ ] **Attunement Verification**:
-  - `KeystoneManager.CanAttune(Player player, int milestone)` inspecting `player.GetSEMan().GetStatusEffect("Rested")` and comfort value.
-  - Locked feedback in the modal when attempting to socket in the wilderness:
-    `"Requires Rested (Comfort {threshold}+) by a hearth to attune."`
-- [ ] **HUD Comfort Indicator**:
-  - Sub-skill modal displays player's current Rested status and Comfort score alongside milestone requirements.
+- [x] **Configurable Comfort Level Thresholds** (`05 - Hearthside Attunement`, server-authoritative):
+  - **Level 20 (Tier I)**: Requires **Rested/Resting** (default Comfort ≥ 1, campfire).
+  - **Level 40 (Tier II)**: Requires **Rested/Resting** (default Comfort ≥ 4, basic shelter).
+  - **Level 60 (Tier III)**: Requires **Rested/Resting** (default Comfort ≥ 8, cozy homestead).
+  - **Level 80 (Tier IV)**: Requires **Rested/Resting** (default Comfort ≥ 12, longhouse).
+  - **Level 100 (Tier V)**: Requires **Rested/Resting** (default Comfort ≥ 16, grand mead hall).
+  - Master toggle (`EnableHearthsideAttunement`) and `RequireRestedStatus` toggle allow admins to customize or disable hearth gating cleanly.
+- [x] **Attunement Verification & Ecosystem Compatibility**:
+  - `KeystoneManager.CanAttuneMilestone(Player player, int milestone, out string reason)` checks live `SE_Rested.CalculateComfortLevel(player)` (automatically benefiting from comfort-enhancing mods such as `VikingClimate` and `RestedRites` with zero hard dependency) alongside `Rested`/`Resting` status.
+  - Enforced in `KeystoneManager.SelectKeystone` while keeping already-socketed keystones active everywhere even after Rested expires.
+- [x] **HUD Comfort Indicator & Diegetic Feedback**:
+  - Skill Tree Drawer header displays live Rested/Resting status and current Comfort score.
+  - Tooltips, timeline banners, and the Keystone Selection Shelf surface clear lock/ready status and play diegetic hearthside audio + HUD messages upon attunement.
 
 ---
 
-### Phase 2: Power Budget Rebalancing & Unique Mechanics
+### Phase 2: Power Budget Rebalancing & Unique Mechanics — 🚧 In Progress
 *Objective: Fix vanilla's excessive passive stat inflation while making keystones genuinely transformative.*
 
-- [ ] **Passive Stat Compression**:
-  - Add configurable multipliers to scale down vanilla passive bonuses (e.g. weapon damage spread, stamina costs, draw times).
-  - Shift that shaved power budget into Keystone milestones so that leveling + keystone choice together reaches peak performance.
+- [x] **Passive Stat Compression**:
+  - Neutralized vanilla fractional per-level scaling by default via `VikingLib` (`EnableVanillaSkillScaling` config toggle), channeling character power into milestone Keystones.
 - [ ] **Unique Combo & Passive Mechanics**:
   - **Axes (3rd combo finisher)**: Replace standard 3rd attack with a wide 360° spin cleave (similar to Atgeir secondary).
   - **Clubs (3rd combo finisher)**: Ground-slam concussive wave with extended stagger.
@@ -70,37 +71,35 @@ A structured plan for transitioning **KeystoneSkills** from a panoramic HUD repl
 
 ---
 
-### Phase 3: Community & Modded Skill Integration
+### Phase 3: Community & Modded Skill Integration — 🚧 Planned
 *Objective: Support popular third-party custom skills without causing power overload.*
 
-- [ ] **Dynamic Skill Discovery**:
-  - Enumerate `player.GetSkills().GetSkillList()` to discover custom modded skills (e.g., Smoothbrain's Sailing, PackHorse, Mining, Hunting, Evade; KG's skills).
-- [ ] **Graceful Fallback Pillars**:
-  - Auto-generate clean 235×400 HUD pillar cards for custom skills even if they lack keystones.
-  - Assign them dynamically to appropriate categories or an "Other / Community" filter tab.
-- [ ] **Power Budget Throttling**:
-  - Provide server/client config options to cap or damp community skill bonuses to prevent runaway character power.
+- [x] **Dynamic Skill Discovery & Fallback Pillars**:
+  - Enumerates `player.GetSkills().GetSkillList()` to render HUD pillar cards and fallback milestone keystones for custom modded skills.
+- [ ] **Dedicated Community Category Tab & Power Budget Throttling**:
+  - Add an "Other / Community" filter tab and server-authoritative config options to cap or damp community skill bonuses.
 - [ ] **Extensibility API / JSON Schema**:
-  - Allow other mod authors or pack creators to define keystones for their custom skills via external JSON files.
+  - Allow other mod authors or modpack creators to define custom keystones and icons for third-party skills via external JSON files.
 
 ---
 
-### Phase 4: Full Keystone Catalog Conceptualization
-*Objective: Complete all milestone options across all 20 vanilla skills before committing to art assets.*
+### Phase 4: Full Keystone Catalog — ✅ Completed (240 / 240 Nodes)
+*Objective: Complete all milestone options across all 24 vanilla skills.*
 
-- [ ] Complete the 160-node matrix (20 skills × 4 milestones × 2 choices):
-  - Weapons (8 skills = 64 keystones)
-  - Defense (2 skills = 16 keystones)
-  - Magic (2 skills = 16 keystones)
-  - Mobility (5 skills = 40 keystones)
-  - Resources (3 skills = 24 keystones)
-- [ ] Playtest and tune gameplay numbers across biome tiers (Meadows through Ashlands).
+- [x] Completed the full **240-node matrix** (24 skills × 5 milestones at Lv. 20 / 40 / 60 / 80 / 100 × 2 choices):
+  - **Weapons** (9 skills = 90 keystones): Axes, Clubs, Swords, Spears, Polearms, Knives, Unarmed, Bows, Crossbows
+  - **Defense** (2 skills = 20 keystones): Blocking, Dodge
+  - **Magic** (2 skills = 20 keystones): Elemental Magic, Blood Magic
+  - **Mobility** (5 skills = 50 keystones): Run, Jump, Sneak, Swim, Ride
+  - **Resources** (6 skills = 60 keystones): Woodcutting, Pickaxes, Farming, Crafting, Cooking, Fishing
+- [ ] Ongoing playtesting and numerical balance tuning across biome tiers (Meadows through Ashlands).
 
 ---
 
-### Phase 5: Iconography & Visual Polish
-*Objective: Give every keystone a distinct, high-fidelity visual identity once designs are finalized.*
+### Phase 5: Iconography & Visual Polish — 🚧 Iconography Complete
+*Objective: Give every keystone a distinct, high-fidelity Nordic visual identity and atmospheric feedback.*
 
-- [ ] **Custom Runic Sprites**: Replace shared parent skill icons with individual runic / thematic ability glyphs.
-- [ ] **StatusEffect Integration**: Register active keystone perks in `ObjectDB` so active effects appear on the player's top-right buff tray.
-- [ ] **Attunement VFX / SFX**: Atmospheric sound and flame/rune particles when attuning at a high-comfort hearth.
+- [x] **Custom Runic Sprites (240 / 240 Complete)**: Every single keystone across all 24 skills has a dedicated 128×128 hand-finished runic icon composited in the canonical Norse border frame.
+- [x] **Hearthside Attunement Audio & UI Polish**: Diegetic attunement chimes, unbinding sounds, and clear hearth-readiness feedback across the Rune Sanctuary and Skill Tree Drawer.
+- [ ] **StatusEffect Buff Tray Integration**: Surface conditional/timed keystone procs cleanly in the player's top-right buff tray via `VikingLib`.
+- [ ] **Hearthside Attunement Particle VFX**: Optional subtle ember/rune particle burst around the player when attuning at a high-comfort hearth.
